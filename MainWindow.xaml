@@ -1,0 +1,218 @@
+<!--  Copyright (c) Microsoft Corporation and Contributors.  -->
+<!--  Licensed under the MIT License.  -->
+
+<Window x:Class="Xaml_Demo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="using:Xaml_Demo"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d">
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.Resources>
+            <x:String x:Key="StringTemplateName">StringTemplate1</x:String>
+            <DataTemplate x:Key="StringTemplate1" x:Name="StringTemplate1" x:DataType="x:String">
+                <Border BorderBrush="{ThemeResource AppBarBorderThemeBrush}" BorderThickness="1">
+                    <TextBlock Text="{x:Bind}" x:Name="xBindText" Foreground="{Binding}" />
+                </Border>
+            </DataTemplate>
+            <Button x:Name="SomeButton"/>
+            <DataTemplate x:Key="StringTemplateRed" x:Name="StringTemplateRed" x:DataType="x:String">
+                <Border>
+                    <TextBlock Text="{x:Bind}" x:Name="xBindText" Foreground="Red"/>
+                </Border>
+            </DataTemplate>
+            <DataTemplate x:Key="StringTemplateButton" x:Name="StringTemplateButton" x:DataType="x:String">
+                <Button x:Name="myButton3" Click="myButton_Click" Background="Transparent">
+                    <TextBlock Text="{x:Bind}" x:Name="xBindText" Foreground="Yellow"/>
+                </Button>
+            </DataTemplate>
+        </Grid.Resources>
+
+        <StackPanel Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    Orientation="Vertical">
+            <StackPanel.Resources>
+                <Style TargetType="FrameworkElement">
+                    <Style.Setters>
+                        <Setter Property="HorizontalAlignment" Value="Left" />
+                    </Style.Setters>
+                </Style>
+            </StackPanel.Resources>
+            <Button x:Name="swapDataTemplates" Click="myButton_Click">swap templates</Button>
+            <Button x:Name="myButton2" Click="myButton_Click">go to usercontrol</Button>
+            <Button x:Name="CounterButton" Click="myButton_Click">Click Me</Button>
+            <TextBlock x:Name="OutputTextBlock"/>
+        </StackPanel>
+
+        <ListView x:Name="DemoListView" ItemTemplate="{StaticResource StringTemplate1}">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel/>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+            <ListView.Items>
+                <x:String>AliceBlue</x:String>
+                <x:String>AntiqueWhite</x:String>
+                <x:String>Aqua</x:String>
+                <x:String>Aquamarine</x:String>
+                <x:String>Azure</x:String>
+                <x:String>Beige</x:String>
+                <x:String>Bisque</x:String>
+                <x:String>Black</x:String>
+                <x:String>BlanchedAlmond</x:String>
+                <x:String>Blue</x:String>
+                <x:String>BlueViolet</x:String>
+                <x:String>Brown</x:String>
+                <x:String>BurlyWood</x:String>
+                <x:String>CadetBlue</x:String>
+                <x:String>Chartreuse</x:String>
+                <x:String>Chocolate</x:String>
+                <x:String>Coral</x:String>
+                <x:String>CornflowerBlue</x:String>
+                <x:String>Cornsilk</x:String>
+                <x:String>Crimson</x:String>
+                <x:String>Cyan</x:String>
+                <x:String>DarkBlue</x:String>
+                <x:String>DarkCyan</x:String>
+                <x:String>DarkGoldenrod</x:String>
+                <x:String>DarkGray</x:String>
+                <x:String>DarkGreen</x:String>
+                <x:String>DarkKhaki</x:String>
+                <x:String>DarkMagena</x:String>
+                <x:String>DarkOliveGreen</x:String>
+                <x:String>DarkOrange</x:String>
+                <x:String>DarkOrchid</x:String>
+                <x:String>DarkRed</x:String>
+                <x:String>DarkSalmon</x:String>
+                <x:String>DarkSeaGreen</x:String>
+                <x:String>DarkSlateBlue</x:String>
+                <x:String>DarkSlateGray</x:String>
+                <x:String>DarkTurquoise</x:String>
+                <x:String>DarkViolet</x:String>
+                <x:String>DeepPink</x:String>
+                <x:String>DeepSkyBlue</x:String>
+                <x:String>DimGray</x:String>
+                <x:String>DodgerBlue</x:String>
+                <x:String>Firebrick</x:String>
+                <x:String>FloralWhite</x:String>
+                <x:String>ForestGreen</x:String>
+                <x:String>Fuschia</x:String>
+                <x:String>Gainsboro</x:String>
+                <x:String>GhostWhite</x:String>
+                <x:String>Gold</x:String>
+                <x:String>Goldenrod</x:String>
+                <x:String>Gray</x:String>
+                <x:String>Green</x:String>
+                <x:String>GreenYellow</x:String>
+                <x:String>Honeydew</x:String>
+                <x:String>HotPink</x:String>
+                <x:String>IndianRed</x:String>
+                <x:String>Indigo</x:String>
+                <x:String>Ivory</x:String>
+                <x:String>Khaki</x:String>
+                <x:String>Lavender</x:String>
+                <x:String>LavenderBlush</x:String>
+                <x:String>LawnGreen</x:String>
+                <x:String>LemonChiffon</x:String>
+                <x:String>LightBlue</x:String>
+                <x:String>LightCoral</x:String>
+                <x:String>LightCyan</x:String>
+                <x:String>LightGoldenrodYellow</x:String>
+                <x:String>LightGreen</x:String>
+                <x:String>LightGray</x:String>
+                <x:String>LightPink</x:String>
+                <x:String>LightSalmon</x:String>
+                <x:String>LightSeaGreen</x:String>
+                <x:String>LightSkyBlue</x:String>
+                <x:String>LightSlateGray</x:String>
+                <x:String>LightSteelBlue</x:String>
+                <x:String>LightYellow</x:String>
+                <x:String>Lime</x:String>
+                <x:String>LimeGreen</x:String>
+                <x:String>Linen</x:String>
+                <x:String>Magenta</x:String>
+                <x:String>Maroon</x:String>
+                <x:String>MediumAquamarine</x:String>
+                <x:String>MediumBlue</x:String>
+                <x:String>MediumOrchid</x:String>
+                <x:String>MediumPurple</x:String>
+                <x:String>MediumSeaGreen</x:String>
+                <x:String>MediumSlateBlue</x:String>
+                <x:String>MediumSpringGreen</x:String>
+                <x:String>MediumTurquoise</x:String>
+                <x:String>MediumVioletRed</x:String>
+                <x:String>MidnightBlue</x:String>
+                <x:String>MintCream</x:String>
+                <x:String>MistyRose</x:String>
+                <x:String>Moccasin</x:String>
+                <x:String>NavajoWhite</x:String>
+                <x:String>Navy</x:String>
+                <x:String>OldLace</x:String>
+                <x:String>Olive</x:String>
+                <x:String>OliveDrab</x:String>
+                <x:String>Orange</x:String>
+                <x:String>OrangeRed</x:String>
+                <x:String>Orchid</x:String>
+                <x:String>PaleGoldenrod</x:String>
+                <x:String>PaleGreen</x:String>
+                <x:String>PaleTurquoise</x:String>
+                <x:String>PaleVioletRed</x:String>
+                <x:String>PapayaWhip</x:String>
+                <x:String>PeachPuff</x:String>
+                <x:String>Peru</x:String>
+                <x:String>Pink</x:String>
+                <x:String>Plum</x:String>
+                <x:String>PowderBlue</x:String>
+                <x:String>Purple</x:String>
+                <x:String>Red</x:String>
+                <x:String>RosyBrown</x:String>
+                <x:String>RoyalBlue</x:String>
+                <x:String>SaddleBrown</x:String>
+                <x:String>Salmon</x:String>
+                <x:String>SandyBrown</x:String>
+                <x:String>SeaGreen</x:String>
+                <x:String>SeaShell</x:String>
+                <x:String>Sienna</x:String>
+                <x:String>Silver</x:String>
+                <x:String>SkyBlue</x:String>
+                <x:String>SlateBlue</x:String>
+                <x:String>SlateGray</x:String>
+                <x:String>Snow</x:String>
+                <x:String>SpringGreen</x:String>
+                <x:String>SteelBlue</x:String>
+                <x:String>Tan</x:String>
+                <x:String>Teal</x:String>
+                <x:String>Thistle</x:String>
+                <x:String>Tomato</x:String>
+                <x:String>Turquoise</x:String>
+                <x:String>Violet</x:String>
+                <x:String>Wheat</x:String>
+                <x:String>White</x:String>
+                <x:String>WhiteSmoke</x:String>
+                <x:String>Yellow</x:String>
+                <x:String>YellowGreen</x:String>
+            </ListView.Items>
+        </ListView>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="ListViewDataTemplateVisualStates">
+                <VisualState x:Name="StringTemplate1State" />
+                <VisualState x:Name="AllRedState">
+                    <VisualState.Setters>
+                        <Setter Target="DemoListView.ItemTemplate" Value="{StaticResource StringTemplateRed}"/>
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="CustomTemplateState"/>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+    </Grid>
+</Window>
