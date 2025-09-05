@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Xaml_Demo.ViewModels"
+             x:Class="Xaml_Demo.MainPage"
+             x:DataType="vm:MainViewModel">
+
+  <Grid ColumnDefinitions="Auto,3*,1*"
+        ColumnSpacing="8">
+    <!-- Left column: menu (top) + demo content (bottom) -->
+    <!-- Scenario menu -->
+    <ContentView Grid.Row="1"
+                 BindingContext="{x:Static vm:MenuViewModel.Instance}"
+                 x:DataType="vm:MenuViewModel">
+      <CollectionView ItemsSource="{Binding Items}"
+                      ItemsLayout="HorizontalList">
+        <CollectionView.ItemTemplate>
+          <DataTemplate x:DataType="vm:MenuItemVM">
+            <Button Text="{Binding Title}"
+                    Command="{Binding Command}"/>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+      </CollectionView>
+    </ContentView>
+
+    <!-- Demo host -->
+    <ContentView Grid.Column="1"
+                 Content="{Binding DemoView}"/>
+    <!-- Console-style output (always visible) -->
+    <Grid RowDefinitions="Auto,*"
+          RowSpacing="6"
+          Grid.Column="2"
+          Padding="8">
+      <Label Text="Output"
+             FontAttributes="Bold"/>
+      <ScrollView Grid.Row="1">
+        <Label
+          Text="{Binding Logger.LogText}"
+          Style="{StaticResource LoggerStyle}"/>
+      </ScrollView>
+    </Grid>
+  </Grid>
+</ContentPage>

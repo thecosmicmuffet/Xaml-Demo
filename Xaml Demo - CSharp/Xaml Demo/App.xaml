@@ -1,0 +1,23 @@
+﻿<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Xaml_Demo"
+             x:Class="Xaml_Demo.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+                <ResourceDictionary>
+                    <Style x:Key="LoggerStyle" TargetType="Label">
+                        <Setter Property="FontSize" Value="12" />
+                        <Setter Property="LineBreakMode" Value="WordWrap" />
+                        <Setter Property="HorizontalTextAlignment" Value="Start" />
+                        <Setter Property="VerticalTextAlignment" Value="Start" />
+                        <Setter Property="FontFamily" Value="Cascadia Code,Consolas,monospace" />
+                    </Style>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

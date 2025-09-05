@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Xaml_Demo.ViewModels"
+             xmlns:svc="clr-namespace:Xaml_Demo.Services"
+             x:Class="Xaml_Demo.Views.Scenarios.MultiVisualPerfView"
+             x:DataType="vm:MultiVisualPerfViewModel">
+  <ContentView.Resources>
+    <ResourceDictionary>
+      <DataTemplate x:Key="PerfItemTemplate"
+                    x:DataType="vm:PerfItemViewModel">
+        <Grid ColumnDefinitions="40,*"
+              Padding="2"
+              svc:FirstBindTracker.Enable="True">
+          <BoxView x:Name="ColorBox"
+                   Color="Blue"
+                   CornerRadius="4"/>
+          <Label Grid.Column="1"
+                 Text="{Binding ColorString}"
+                 FontSize="12"
+                 VerticalTextAlignment="Center"/>
+        </Grid>
+      </DataTemplate>
+    </ResourceDictionary>
+  </ContentView.Resources>
+  <VisualStateManager.VisualStateGroups>
+    <VisualStateGroupList>
+      <VisualStateGroup x:Name="ColorStates">
+        <VisualState x:Name="Normal"/>
+        <VisualState x:Name="Highlighted">
+          <VisualState.Setters>
+            <Setter TargetName="ItemsCollectionView"
+                    Property="CollectionView.ItemTemplate"
+                    Value="{StaticResource PerfItemTemplate}"/>
+          </VisualState.Setters>
+        </VisualState>
+      </VisualStateGroup>
+    </VisualStateGroupList>
+  </VisualStateManager.VisualStateGroups>
+  <Grid RowDefinitions="Auto,Auto,Auto,*"
+        Padding="8"
+        RowSpacing="8">
+
+    <Label Text="Multi Visual Performance"
+           FontSize="18"
+           FontAttributes="Bold"/>
+    <HorizontalStackLayout x:Name="ActionsLayout"
+                           Spacing="12"
+                           Grid.Row="1">
+      <Button Text="Swap Colors"
+              Clicked="OnSwapColors"/>
+      <Button Text="Change VisualState"
+              Clicked="OnChangeVisualState"/>
+    </HorizontalStackLayout>
+    <BoxView Grid.Row="2"
+             HeightRequest="4"
+             Color="{DynamicResource Secondary}"/>
+    <Grid Grid.Row="3"
+          ColumnDefinitions="*,*"
+          ColumnSpacing="8">
+      <Border Grid.Column="0"
+              Padding="8"
+              Stroke="{DynamicResource Primary}"
+              StrokeThickness="1">
+        <CollectionView x:Name="ItemsCollectionView"
+                        ItemsSource="{Binding Items}">
+          <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="vm:PerfItemViewModel">
+            <Grid ColumnDefinitions="40,*"
+                  Padding="2"
+                  svc:FirstBindTracker.Enable="True">
+                <BoxView Color="{Binding Color}"
+                         CornerRadius="4"/>
+                <Label Grid.Column="1"
+                       Text="{Binding ColorString}"
+                       FontSize="12"
+                       VerticalTextAlignment="Center"/>
+              </Grid>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </Border>
+      <Border Grid.Column="1"
+              Padding="8"
+              Stroke="{DynamicResource Primary}"
+              StrokeThickness="1">
+        <VerticalStackLayout>
+          <Label Text="Panel B"
+                 FontAttributes="Bold"/>
+          <Label Text="(Demo content…)"/>
+        </VerticalStackLayout>
+      </Border>
+    </Grid>
+
+  </Grid>
+
+</ContentView>

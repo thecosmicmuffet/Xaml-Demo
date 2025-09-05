@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Xaml Demo (Windows EXE)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build Xaml Demo (Debug)",
+      "program": "${workspaceFolder}/Xaml Demo/bin/Debug/net10.0-windows10.0.19041.0/win-x64/Xaml Demo.exe",
+      "cwd": "${workspaceFolder}/Xaml Demo/bin/Debug/net10.0-windows10.0.19041.0/win-x64",
+      "justMyCode": true
+    }
+  ]
+}
