@@ -107,6 +107,7 @@
     <Manifest Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AnimatedColorBrush.h" />
     <ClInclude Include="DemoUserControl.h">
       <DependentUpon>DemoUserControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -118,6 +119,7 @@
     <ClInclude Include="MainWindow.xaml.h">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="XamlTypeInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml" />
@@ -127,6 +129,7 @@
     <Page Include="MainWindow.xaml" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AnimatedColorBrush.cpp" />
     <ClCompile Include="DemoUserControl.cpp">
       <DependentUpon>DemoUserControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -146,14 +149,6 @@
     <Midl Include="App.idl">
       <SubType>Code</SubType>
       <DependentUpon>App.xaml</DependentUpon>
-    </Midl>
-    <Midl Include="DemoUserControl.idl">
-      <DependentUpon>DemoUserControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="MainWindow.idl">
-      <SubType>Code</SubType>
-      <DependentUpon>MainWindow.xaml</DependentUpon>
     </Midl>
   </ItemGroup>
   <ItemGroup>

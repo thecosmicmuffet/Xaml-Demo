@@ -1,8 +1,0 @@
-namespace Xaml_Demo
-{
-    [default_interface]
-    runtimeclass DemoUserControl : Microsoft.UI.Xaml.Controls.UserControl
-    {
-        DemoUserControl();
-    }
-}

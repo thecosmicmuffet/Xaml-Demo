@@ -19,16 +19,19 @@
             <DataTemplate x:Key="StringTemplate1" x:DataType="x:String">
                 <Border BorderBrush="{ThemeResource AppBarBorderThemeBrush}" BorderThickness="1">
                     <TextBlock x:Name="xBindText"
-                               Foreground="{x:Bind}"
+                               Foreground="{Binding}"
                                Text="{x:Bind}" />
                 </Border>
             </DataTemplate>
             <DataTemplate x:Key="StringTemplateRed" x:DataType="x:String">
-                <Border>
+                <Button x:Name="myButton4" Click="myButton_Click">
                     <TextBlock x:Name="xBindText"
-                               Foreground="Red"
-                               Text="{x:Bind}" />
-                </Border>
+                               Text="{x:Bind}" >
+                        <TextBlock.Foreground>
+                            <local:AnimatedColorBrush Color="{StaticResource FavoriteColor}" />
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                </Button>
             </DataTemplate>
             <DataTemplate x:Key="StringTemplateButton" x:DataType="x:String">
                 <Button x:Name="myButton3" Click="myButton_Click">
@@ -44,14 +47,26 @@
             <StackPanel.Resources>
                 <Style TargetType="FrameworkElement">
                     <Style.Setters>
-                        <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="HorizontalAlignment" Value="Right" />
+                    </Style.Setters>
+                </Style>
+                <Style TargetType="TextBlock">
+                    <Style.Setters>
+                        <Setter Property="HorizontalAlignment" Value="Right" />
+                    </Style.Setters>
+                </Style>
+                <Style TargetType="Rectangle">
+                    <Style.Setters>
+                        <Setter Property="HorizontalAlignment" Value="Right" />
                     </Style.Setters>
                 </Style>
             </StackPanel.Resources>
             <Button x:Name="swapDataTemplates" Click="myButton_Click">Swap Templates</Button>
+            <TextBlock Text="TextBlock"/>
+            <Rectangle Fill="Blue" Width="100" Height="100"/>
         </StackPanel>
 
-        <ListView x:Name="DemoListView" ItemTemplate="{StaticResource StringTemplateRed}">
+        <ListView x:Name="DemoListView" ItemTemplate="{StaticResource StringTemplate1}">
             <ListView.Items>
                 <x:String>AliceBlue</x:String>
                 <x:String>AntiqueWhite</x:String>

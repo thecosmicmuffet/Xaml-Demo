@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "DemoUserControl.g.h"
+#include "AnimatedColorBrush.h"
 
 namespace winrt::Xaml_Demo::implementation
 {

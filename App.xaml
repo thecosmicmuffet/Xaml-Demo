@@ -1,19 +1,25 @@
-<!--  Copyright (c) Microsoft Corporation and Contributors.  -->
-<!--  Licensed under the MIT License.  -->
+<!-- Copyright (c) Microsoft Corporation and Contributors. -->
+<!-- Licensed under the MIT License. -->
 
-<Application x:Class="Xaml_Demo.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="using:Xaml_Demo">
+<Application
+    x:Class="Xaml_Demo.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Xaml_Demo">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!--  Other merged dictionaries here  -->
+                <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!--  Other app resources here  -->
-            <SolidColorBrush x:Key="FavoriteColor" x:Name="FavoriteColor" Color="DarkMagenta"/>
-            <ListView x:Key="SomeList" x:Name="SomeList"/>
+            <!-- Other app resources here -->
+            <Color
+                x:Key="FavoriteColor">
+                DarkMagenta
+            </Color>
+            <ListView
+                x:Key="SomeList"
+                x:Name="SomeList" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

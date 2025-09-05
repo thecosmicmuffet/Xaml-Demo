@@ -3,4 +3,41 @@
 
 namespace Xaml_Demo
 {
+    [default_interface] runtimeclass MainWindow : Microsoft.UI.Xaml.Window
+    {
+        MainWindow();
+    }
+
+    [default_interface] runtimeclass DemoUserControl : Microsoft.UI.Xaml.Controls.UserControl
+    {
+        DemoUserControl();
+    }
+
+    [default_interface] runtimeclass AnimatedColorBrush : Microsoft.UI.Xaml.Media.XamlCompositionBrushBase
+    {
+        AnimatedColorBrush();
+
+        static Microsoft.UI.Xaml.DependencyProperty ColorProperty
+        {
+            get;
+        };
+        Windows.UI.Color Color;
+    }
+
+    // runtimeclass ViewModel : Microsoft.UI.Xaml.DependencyObject, Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    //{
+    //     ViewModel();
+
+    //    Int32 ClickCount;
+    //    Microsoft.UI.Xaml.Input.ICommand IncrementCommand{get;};
+
+    //    IObservableVector<IInspectable> ColorStrings{get;};
+
+    //}
+
+    //[default_interface]
+    // runtimeclass RelayCommand : Microsoft.UI.Xaml.Input.ICommand
+    //{
+    //    RelayCommand();
+    //}
 }

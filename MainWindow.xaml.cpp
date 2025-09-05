@@ -25,28 +25,6 @@ namespace winrt::Xaml_Demo::implementation
         InitializeComponent();
     }
 
-    void MainWindow::HandleSwapDataTemplates()
-    {
-        
-            if (auto currentTemplate = DemoListView().ItemTemplate())
-            {
-                OutputTextBlock().Text(SomeButton().Name());
-                // StringTemplate1().Name doesn't work
-                if (StringTemplate1() == currentTemplate)
-                {
-                    DemoListView().ItemTemplate(StringTemplateRed());
-                }
-                else if (RootGrid().Resources().Lookup(box_value(L"StringTemplateRed")).try_as<DataTemplate>() == currentTemplate)
-                {
-                    DemoListView().ItemTemplate(RootGrid().Resources().Lookup(box_value(L"StringTemplateButton")).try_as<DataTemplate>());
-                }
-                else
-                {
-                    DemoListView().ItemTemplate(RootGrid().Resources().Lookup(box_value(L"StringTemplate1")).try_as<DataTemplate>());
-                }
-            }
-    }
-
     void MainWindow::HandleGoToUserControl()
     {
         this->Content(make<DemoUserControl>());
@@ -59,22 +37,13 @@ namespace winrt::Xaml_Demo::implementation
         if (auto button = sender.try_as<Button>())
         {
             auto buttonName = button.Name();
-            if (buttonName == L"swapDataTemplates")
-            {
-                HandleSwapDataTemplates();
-            }
-            else if (sender == myButton2())
+            if (sender == myButton2())
             {
                 HandleGoToUserControl();
             }
             else if (sender == CounterButton())
             {
                 // just count
-            }
-            else if (buttonName == L"myButton3")
-            {
-                //SolidColorBrush brush = App::Resources().Lookup;
-                //button.Background(brush);
             }
         }
     }
