@@ -63,7 +63,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Xaml.Demo.Core\Xaml.Demo.Core.csproj" />
-	</ItemGroup>
+  <ProjectReference Include="..\Xaml.Demo.Core\Xaml.Demo.Core.csproj" />
+</ItemGroup>
+
+<ItemGroup>
+  <!-- Exclude legacy stub files now that Core project hosts actual implementations -->
+  <Compile Remove="ViewModels\BaseViewModel.cs" />
+  <Compile Remove="ViewModels\PerfItemViewModel.cs" />
+  <Compile Remove="ViewModels\MultiVisualPerfViewModel.cs" />
+  <Compile Remove="ViewModels\ISelectable.cs" />
+  <Compile Remove="Surfaces\FrameworkSurfaceKind.cs" />
+</ItemGroup>
 
 </Project>

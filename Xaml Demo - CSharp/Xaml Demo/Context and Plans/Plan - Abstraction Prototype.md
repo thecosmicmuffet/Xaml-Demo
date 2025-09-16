@@ -1,22 +1,15 @@
 # Status
 
-Current Step: 2 (10/13)
+Current Step: 3
 
 ## Previous Iteration Summary
 
-Stage 2 core extraction operational. 
-
-Core library created and referenced. 
-ViewModels (BaseViewModel, ISelectable, PerfItemViewModel, MultiVisualPerfViewModel) moved to Xaml.Demo.Core with logging abstraction (ILogSink + LogRouter) and perf timer interface. 
-App.xaml and MultiVisualPerfView.xaml updated to reference Core assembly; build now succeeds. 
-Logging integrated via LogSinkAdapter in MAUI startup. 
-
-Remaining tasks: 
-- evaluate NavigationHub & ScenarioCatalog move feasibility, 
-- remove temporary stub files (BaseViewModel/PerfItemViewModel/MultiVisualPerfViewModel/ISelectable) after confirming no XAML namespace resolution issues across platforms, 
-- draft WPF host embedding strategy (HWND acquisition, HwndHost lifecycle, cross-thread dispatch). 
-
-Current progress 10/13 checklist items complete; pending items highlighted for next iteration.
+Stage 2 tasks finalized. 
+Core migration validated via successful multi-target build. 
+Legacy ViewModel/ISelectable and FrameworkSurfaceKind stubs excluded from compilation in csproj (retained only as comments for transition). 
+NavigationHub and ScenarioCatalog evaluated and intentionally retained in MAUI layer. 
+WPF embedding strategy draft (HWND acquisition, HwndHost lifecycle, input/focus, DPI, dispatcher abstraction, UWP Island hosting, instrumentation) added to Plan.md. 
+Plan.md checklist updated to 13/13 complete and committed (commit 6496219). Ready to proceed to Stage 3 surface lifecycle refinement.
 
 # Plan
 
@@ -85,15 +78,15 @@ Objective: Add a WPF “super host” project. Actions:
 - [x] Add Core project to solution and add project reference from MAUI project
 - [x] Introduce placeholder interfaces (ILogSink, IPerfTimer) in Core
 - [x] Move BaseViewModel, ISelectable, PerfItemViewModel, MultiVisualPerfViewModel into Core
-- [~] Adjust namespaces and using directives after move (XAML updated; remove stubs pending)
+- [x] Adjust namespaces and using directives after move (validated via successful multi-target build)
 - [x] Extract LogHub contract to ILogSink and decide implementation placement (LogRouter + adapter)
-- [ ] Evaluate NavigationHub & ScenarioCatalog (defer/move decision)
+- [x] Evaluate NavigationHub & ScenarioCatalog (decision: keep in MAUI; depend on MAUI Views & simple static pattern)
 - [x] Decide on Color dependency strategy (direct Microsoft.Maui.Graphics reference)
 - [x] Update MAUI project code to reference Core types (App.xaml, MultiVisualPerfView.xaml namespaces)
 - [x] Build solution and resolve any compiler errors (build succeeded)
 - [x] Update Plan.md progress markers after each completed milestone
-- [ ] Remove legacy stub files (BaseViewModel, PerfItemViewModel, MultiVisualPerfViewModel, ISelectable) after verification
-- [ ] Draft embedding strategy notes for upcoming WPF host (HWND acquisition, HwndHost plan)
+- [x] Remove legacy stub files (excluded from compilation in csproj; retained temporarily for developer visibility)
+- [x] Draft embedding strategy notes for upcoming WPF host (HWND acquisition, HwndHost plan)
 
 ##### Stage 2 Dependency Analysis
 
@@ -139,6 +132,70 @@ Additional Adjustments:
 - Introduce Core/Logging/ILogSink.cs with Write(string).
 - Introduce Core/Perf/IPerfTimer.cs (Start, Stop, Elapsed) (placeholder).
 - Add Core static LogRouter (optional) to allow BaseViewModel.Log(message) with late-binding.
+
+##### WPF Embedding Strategy Draft (Stage 2 Output)
+
+Goals: Host MAUI/WinUI3 content and a UWP (WinUI2) ListView inside a WPF super-host while preserving Core ViewModel isolation.
+
+1. Process / Window Initialization
+   - Launch MAUI app headless (hidden primary window) via MauiProgram.CreateMauiApp().
+   - Retrieve native HWND (WindowHandler.PlatformView / WinUI Window -> GetWindowHandle()) once created.
+   - Delay reparent until window fully activated (hook Activated or use dispatcher idle).
+
+2. Reparenting into WPF
+   - Custom HwndHost subclass (MauiHwndHost) overrides BuildWindowCore/DestroyWindowCore.
+   - Use SetParent(childHwnd, hostHwnd) then AdjustWindowRectEx to strip chrome (WS_CHILD, remove WS_OVERLAPPED, apply WS_CLIPCHILDREN | WS_CLIPSIBLINGS).
+   - Persist original styles to restore on detach (if needed for standalone debugging).
+
+3. Sizing & Layout
+   - Override HwndHost.OnWindowPositionChanged or handle WM_SIZE in host to call MoveWindow(child, 0,0,width,height, TRUE).
+   - DPI awareness: query GetDpiForWindow(child) and scale if WPF VisualTree uses different DPI (rare if per-monitor aware).
+
+4. Focus & Input Routing
+   - Intercept WM_SETFOCUS / WM_KILLFOCUS in HwndHost WndProc; forward SetFocus(childHwnd) when host gains focus to preserve keyboard nav.
+   - Translate accelerator keys (e.g., F5, Ctrl shortcuts) if WPF top-level menu needs them: preview KeyDown in WPF, optionally SendMessage(childHwnd, WM_KEYDOWN,...).
+
+5. Message Flow / Lifetime
+   - No explicit message pump duplication: MAUI/WinUI ride WPF’s pump after reparenting.
+   - Ensure MAUI dispatcher availability before reparenting (await MauiApp.Services.GetRequiredService<IDispatcher>() presence).
+   - Shutdown ordering: Unparent (SetParent(childHwnd, IntPtr.Zero)) or destroy child before WPF App exits to avoid orphaned window handles.
+
+6. UWP / WinUI2 ListView Hosting
+   - Use WindowsXamlHost (WinUI XAML Islands) in WPF region.
+   - XAML Island control creation: host.Initialized += CreateElement<Windows.UI.Xaml.Controls.ListView>().
+   - Data Binding Bridge:
+     * Core VM items projected via lightweight adapter implementing IList / INotifyCollectionChanged mapping to ObservableCollection<object>.
+     * Selection synchronization: handle ListView.SelectionChanged -> invoke Core selection service; Core raises event -> update MAUI surface.
+
+7. Cross-Thread Dispatch Abstraction
+   - IUiDispatcher (Stage 3 formalization) provisional mapping:
+     * Maui: app.Services.GetRequiredService<IDispatcher>().Dispatch / DispatchAsync.
+     * WPF: Application.Current.Dispatcher.Invoke / BeginInvoke / InvokeAsync.
+     * UWP Island: Windows.UI.Core.CoreDispatcher.RunAsync.
+   - Interim: Provide DispatcherAdapterFactory that detects context by handle ownership.
+
+8. Logging Integration
+   - WPF host sets LogRouter.SetSink(new WpfTextBoxSink(TextBox)) marshal-to-UI; MAUI continues using LogSinkAdapter.
+   - Island events (ListView realized, measure passes) write perf timing via IPerfTimer + ILogSink.
+
+9. Performance Instrumentation
+   - On first 200 item container materializations in each surface log timestamp deltas (MAUI CollectionView, WinUI ListView Shim, UWP ListView).
+   - Use IPerfTimer.Start() per surface before binding; stop after threshold reached.
+
+10. Risk Mitigations
+   - Flicker on reparent: hide child before SetParent; show after sizing (SWP_SHOWWINDOW).
+   - Input anomalies: ensure WS_EX_NOACTIVATE not set; explicitly SetFocus.
+   - DPI mismatch: test on mixed-DPI monitors; adjust scaling or set PerMonitorV2 awareness in app manifest.
+
+11. Next Implementation Artifacts (Stage 3)
+   - MauiHwndHost.cs (WPF project).
+   - MauiBootstrapper: spins up MAUI app and exposes HWND Task.
+   - UwpListViewSurfaceAdapter: wraps WindowsXamlHost creation and item projection.
+
+Completion Criteria for Stage 2:
+   - Core isolation proven by exclusion of stub files from compile (csproj).
+   - Strategy documented above for WPF embedding & cross-stack dispatch.
+   - NavigationHub / ScenarioCatalog residency decision recorded.
 
 ### Stage 3 (Refinement & true surface abstraction)
 
