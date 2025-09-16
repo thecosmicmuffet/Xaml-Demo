@@ -28,6 +28,11 @@ handlers.AddHandler(typeof(WinUIListViewShim), typeof(WinUIListViewShimHandler))
 		builder.Logging.AddDebug();
 #endif
 
-		return builder.Build();
+var app = builder.Build();
+
+// Wire up Core logging sink (only if not already set by another host)
+Xaml_Demo.Logging.LogRouter.Sink ??= new Xaml_Demo.Services.LogSinkAdapter();
+
+return app;
 	}
 }

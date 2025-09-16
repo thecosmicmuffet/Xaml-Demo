@@ -1,21 +1,7 @@
-using System;
-
-namespace Xaml_Demo.ViewModels
-{
-    /// <summary>
-    /// General selection contract used by the template selector.
-    /// MultiVisualPerfViewModel supplies collection-level semantics (membership in a HashSet).
-    /// PerfItemViewModel supplies per-item semantics via an internal boolean.
-    /// </summary>
-    public interface ISelectable
-    {
-        /// <summary>Set selection state on this selectable scope (item or whole set).</summary>
-        void SetSelected(bool value);
-
-        /// <summary>
-        /// Returns true if the supplied candidate object should be considered selected
-        /// within this selectable scope.
-        /// </summary>
-        bool IsSelected(object candidate);
-    }
-}
+/*
+ * ISelectable interface moved to Core project:
+ *   Xaml.Demo.Core/ViewModels/ISelectable.cs
+ * This stub remains to avoid XAML namespace resolution confusion.
+ * Remove the stub once all XAML files reference:
+ *   xmlns:vm="clr-namespace:Xaml_Demo.ViewModels;assembly=Xaml.Demo.Core"
+ */

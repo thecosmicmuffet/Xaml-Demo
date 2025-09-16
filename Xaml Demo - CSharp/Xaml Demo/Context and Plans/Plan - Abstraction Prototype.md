@@ -1,24 +1,22 @@
 # Status
-PAUSED (currently working on XAML Demonstration)
-Current Step: 2
-## Previous Step Summary
 
-Stage 1 surface abstraction introduced.
+Current Step: 2 (10/13)
 
-Changes:
+## Previous Iteration Summary
 
-- Added Surfaces: FrameworkSurfaceKind, IRenderSurface, ExistingMauiViewSurface.
-- Extended MultiVisualPerfViewModel with SurfaceOrder property.
-- Added x:Name to WinUIListViewShim (RightListShim).
-- Updated MultiVisualPerfView.xaml.cs to collect surfaces dynamically (EnsureSurfaces).
-- Build succeeded; only XML doc warnings (no functional errors).
+Stage 2 core extraction operational. 
 
-Next optional fixes (not applied):
+Core library created and referenced. 
+ViewModels (BaseViewModel, ISelectable, PerfItemViewModel, MultiVisualPerfViewModel) moved to Xaml.Demo.Core with logging abstraction (ILogSink + LogRouter) and perf timer interface. 
+App.xaml and MultiVisualPerfView.xaml updated to reference Core assembly; build now succeeds. 
+Logging integrated via LogSinkAdapter in MAUI startup. 
 
-- Clean malformed XML comments in FirstBindTracker.cs and MultiVisualPerfViewModel.cs.
-- Add future UWP placeholder surface implementation.
+Remaining tasks: 
+- evaluate NavigationHub & ScenarioCatalog move feasibility, 
+- remove temporary stub files (BaseViewModel/PerfItemViewModel/MultiVisualPerfViewModel/ISelectable) after confirming no XAML namespace resolution issues across platforms, 
+- draft WPF host embedding strategy (HWND acquisition, HwndHost lifecycle, cross-thread dispatch). 
 
-Ready for further stages (WPF host project, dispatcher abstraction, out-of-process exploration).
+Current progress 10/13 checklist items complete; pending items highlighted for next iteration.
 
 # Plan
 
@@ -83,17 +81,18 @@ Objective: Add a WPF “super host” project. Actions:
 #### Stage 2 Checklist
 
 - [x] Analyze current ViewModel and service dependencies on MAUI-specific APIs
-- [ ] Create Xaml.Demo.Core project (netstandard2.1) for shared logic
-- [ ] Add Core project to solution and add project reference from MAUI project
-- [ ] Introduce placeholder interfaces (ILogSink, IPerfTimer) in Core
-- [ ] Move BaseViewModel, ISelectable, PerfItemViewModel, MultiVisualPerfViewModel into Core
-- [ ] Adjust namespaces and using directives after move
-- [ ] Extract LogHub contract to ILogSink and decide implementation placement
-- [ ] Evaluate NavigationHub & ScenarioCatalog (defer move if tightly coupled to MAUI Shell)
-- [ ] Decide on Color dependency strategy (direct Microsoft.Maui.Graphics reference vs abstraction)
-- [ ] Update MAUI project code to reference Core types
-- [ ] Build solution and resolve any compiler errors
-- [ ] Update Plan.md progress markers after each completed milestone
+- [x] Create Xaml.Demo.Core project (netstandard2.1) for shared logic
+- [x] Add Core project to solution and add project reference from MAUI project
+- [x] Introduce placeholder interfaces (ILogSink, IPerfTimer) in Core
+- [x] Move BaseViewModel, ISelectable, PerfItemViewModel, MultiVisualPerfViewModel into Core
+- [~] Adjust namespaces and using directives after move (XAML updated; remove stubs pending)
+- [x] Extract LogHub contract to ILogSink and decide implementation placement (LogRouter + adapter)
+- [ ] Evaluate NavigationHub & ScenarioCatalog (defer/move decision)
+- [x] Decide on Color dependency strategy (direct Microsoft.Maui.Graphics reference)
+- [x] Update MAUI project code to reference Core types (App.xaml, MultiVisualPerfView.xaml namespaces)
+- [x] Build solution and resolve any compiler errors (build succeeded)
+- [x] Update Plan.md progress markers after each completed milestone
+- [ ] Remove legacy stub files (BaseViewModel, PerfItemViewModel, MultiVisualPerfViewModel, ISelectable) after verification
 - [ ] Draft embedding strategy notes for upcoming WPF host (HWND acquisition, HwndHost plan)
 
 ##### Stage 2 Dependency Analysis
