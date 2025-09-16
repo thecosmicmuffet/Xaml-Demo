@@ -62,4 +62,8 @@
 		<PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.0-preview.7.25380.108" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\Xaml.Demo.Core\Xaml.Demo.Core.csproj" />
+	</ItemGroup>
+
 </Project>

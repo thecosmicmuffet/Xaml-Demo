@@ -3,8 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Xaml_Demo.ViewModels"
              xmlns:svc="clr-namespace:Xaml_Demo.Services"
+             xmlns:sel="clr-namespace:Xaml_Demo.Views.Selectors"
+             xmlns:ctrl="clr-namespace:Xaml_Demo.Controls"
              x:Class="Xaml_Demo.Views.Scenarios.MultiVisualPerfView"
-             x:DataType="vm:MultiVisualPerfViewModel">
+             x:DataType="vm:MultiVisualPerfViewModel"
+             Loaded="OnLoaded"
+             BindingContext="{StaticResource MultiVisualPerfViewModel}">
   <ContentView.Resources>
     <ResourceDictionary>
       <DataTemplate x:Key="PerfItemTemplate"
@@ -12,8 +16,11 @@
         <Grid ColumnDefinitions="40,*"
               Padding="2"
               svc:FirstBindTracker.Enable="True">
-          <BoxView x:Name="ColorBox"
-                   Color="Blue"
+          <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnItemTapped"
+                CommandParameter="{Binding .}"/>
+          </Grid.GestureRecognizers>
+          <BoxView Color="{Binding Color}"
                    CornerRadius="4"/>
           <Label Grid.Column="1"
                  Text="{Binding ColorString}"
@@ -21,17 +28,58 @@
                  VerticalTextAlignment="Center"/>
         </Grid>
       </DataTemplate>
+
+      <DataTemplate x:Key="PerfItemTemplateSelected"
+                    x:DataType="vm:PerfItemViewModel">
+        <Border Padding="8"
+                Stroke="{DynamicResource Primary}"
+                StrokeThickness="1">
+          <Border.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnItemTapped"
+                CommandParameter="{Binding .}"/>
+          </Border.GestureRecognizers>
+          <Grid ColumnDefinitions="40,*"
+                Padding="2"
+                svc:FirstBindTracker.Enable="True">
+            <BoxView Color="{Binding Color}"
+                     CornerRadius="4"/>
+            <Label Grid.Column="1"
+                   Text="{Binding ColorString}"
+                   FontSize="12"
+                   VerticalTextAlignment="Center"/>
+          </Grid>
+        </Border>
+      </DataTemplate>
+
+      <!-- Template selector leveraging selection context (the view model) -->
+      <sel:PerfItemSelectionTemplateSelector x:Key="PerfItemTemplateSelector"
+                                             PerfItemTemplate="{StaticResource PerfItemTemplate}"
+                                             PerfItemTemplateSelected="{StaticResource PerfItemTemplateSelected}"
+                                             SelectionContext="{StaticResource MultiVisualPerfViewModel}"/>
     </ResourceDictionary>
   </ContentView.Resources>
   <VisualStateManager.VisualStateGroups>
     <VisualStateGroupList>
       <VisualStateGroup x:Name="ColorStates">
-        <VisualState x:Name="Normal"/>
-        <VisualState x:Name="Highlighted">
+        <VisualState x:Name="Normal">
           <VisualState.Setters>
             <Setter TargetName="ItemsCollectionView"
                     Property="CollectionView.ItemTemplate"
                     Value="{StaticResource PerfItemTemplate}"/>
+          </VisualState.Setters>
+        </VisualState>
+        <VisualState x:Name="Highlighted">
+          <VisualState.Setters>
+            <Setter TargetName="ItemsCollectionView"
+                    Property="CollectionView.ItemTemplate"
+                    Value="{StaticResource PerfItemTemplateSelected}"/>
+          </VisualState.Setters>
+        </VisualState>
+        <VisualState x:Name="Selectable">
+          <VisualState.Setters>
+            <Setter TargetName="ItemsCollectionView"
+                    Property="CollectionView.ItemTemplate"
+                    Value="{StaticResource PerfItemTemplateSelector}"/>
           </VisualState.Setters>
         </VisualState>
       </VisualStateGroup>
@@ -51,6 +99,8 @@
               Clicked="OnSwapColors"/>
       <Button Text="Change VisualState"
               Clicked="OnChangeVisualState"/>
+      <Button Text="Toggle Select All"
+              Clicked="OnToggleSelectAll"/>
     </HorizontalStackLayout>
     <BoxView Grid.Row="2"
              HeightRequest="4"
@@ -62,33 +112,39 @@
               Padding="8"
               Stroke="{DynamicResource Primary}"
               StrokeThickness="1">
-        <CollectionView x:Name="ItemsCollectionView"
-                        ItemsSource="{Binding Items}">
-          <CollectionView.ItemTemplate>
-            <DataTemplate x:DataType="vm:PerfItemViewModel">
-            <Grid ColumnDefinitions="40,*"
-                  Padding="2"
-                  svc:FirstBindTracker.Enable="True">
-                <BoxView Color="{Binding Color}"
-                         CornerRadius="4"/>
-                <Label Grid.Column="1"
-                       Text="{Binding ColorString}"
-                       FontSize="12"
-                       VerticalTextAlignment="Center"/>
-              </Grid>
-            </DataTemplate>
-          </CollectionView.ItemTemplate>
-        </CollectionView>
+        <Grid x:Name="LeftColumn">
+          <CollectionView x:Name="ItemsCollectionView"
+                          ItemsSource="{Binding Items}"
+                          ItemTemplate="{StaticResource PerfItemTemplate}"/>
+          <!-- Lasso overlay -->
+          <Grid x:Name="LassoLayer"
+                InputTransparent="False">
+            <BoxView x:Name="LassoHitSurface"
+                     BackgroundColor="Transparent">
+              <BoxView.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnLassoPan"/>
+              </BoxView.GestureRecognizers>
+            </BoxView>
+            <Border x:Name="LassoRect"
+                    IsVisible="False"
+                    Stroke="DodgerBlue"
+                    StrokeThickness="2"
+                    BackgroundColor="#40007ACC"/>
+          </Grid>
+        </Grid>
       </Border>
       <Border Grid.Column="1"
+          x:Name="RightColumn"
               Padding="8"
               Stroke="{DynamicResource Primary}"
               StrokeThickness="1">
-        <VerticalStackLayout>
+        <Grid x:Name="RightPanelGrid"
+            RowDefinitions="Auto,Auto,*">
           <Label Text="Panel B"
                  FontAttributes="Bold"/>
-          <Label Text="(Demo content…)"/>
-        </VerticalStackLayout>
+          <ctrl:WinUIListViewShim x:Name="RightListShim" Grid.Row="2"
+                                  ItemsSource="{Binding Items}"/>
+        </Grid>
       </Border>
     </Grid>
 

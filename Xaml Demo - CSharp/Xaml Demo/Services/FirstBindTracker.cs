@@ -13,7 +13,7 @@ namespace Xaml_Demo.Services;
         /// Usage:
         ///   xmlns:svc="clr-namespace:Xaml_Demo.Services"
         /// In a DataTemplate root element:
-        ///   <Grid svc:FirstBindTracker.Enable="True" ...> ... </Grid>
+        ///   svc:FirstBindTracker.Enable="True"
         /// Optional command callback:
         ///   svc:FirstBindTracker.Command="{Binding SomeCommand}"
         /// After the first non-null BindingContext is observed the handler detaches to avoid

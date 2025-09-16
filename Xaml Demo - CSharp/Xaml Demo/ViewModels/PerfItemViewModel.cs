@@ -2,10 +2,11 @@ using Microsoft.Maui.Graphics;
 
 namespace Xaml_Demo.ViewModels;
 
-public sealed class PerfItemViewModel : BaseViewModel
+public sealed class PerfItemViewModel : BaseViewModel, ISelectable
 {
     private readonly Color _defaultColor;
     private Color _color;
+    private bool _selected;
 
     public PerfItemViewModel(Color defaultColor)
     {
@@ -36,4 +37,14 @@ public sealed class PerfItemViewModel : BaseViewModel
     public Color GetColor() => _color;
 
     public void ResetColor() => Color = _defaultColor;
+
+    public bool Selected
+    {
+        get => _selected;
+        set => SetProperty(ref _selected, value);
+    }
+
+    void ISelectable.SetSelected(bool value) => Selected = value;
+
+    bool ISelectable.IsSelected(object candidate) => ReferenceEquals(candidate, this) && _selected;
 }
