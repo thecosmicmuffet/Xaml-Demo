@@ -4,7 +4,6 @@
              xmlns:vm="clr-namespace:Xaml_Demo.ViewModels"
              x:Class="Xaml_Demo.MainPage"
              x:DataType="vm:MainViewModel">
-
   <Grid ColumnDefinitions="Auto,3*,1*"
         ColumnSpacing="8">
     <!-- Left column: menu (top) + demo content (bottom) -->
@@ -33,8 +32,9 @@
           Padding="8">
       <Label Text="Output"
              FontAttributes="Bold"/>
-      <ScrollView Grid.Row="1">
+      <ScrollView x:Name="LoggerScrollViewer" Grid.Row="1">
         <Label
+          x:Name="LoggerText"
           Text="{Binding Logger.LogText}"
           Style="{StaticResource LoggerStyle}"/>
       </ScrollView>

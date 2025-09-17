@@ -20,6 +20,9 @@ public partial class MultiVisualPerfView : ContentView
     {
         InitializeComponent();
         LogHub.Write("MultiVisualPerfView created");
+        if (BindingContext is not MultiVisualPerfViewModel vm)
+            return;
+        vm.CurrentColorState = "Normal";
     }
 
     private void OnLoaded(object? sender, EventArgs e)
@@ -86,6 +89,7 @@ public partial class MultiVisualPerfView : ContentView
         {
             "Normal" => "Highlighted",
             "Highlighted" => "Selectable",
+            "Selectable" => "SelectableByProperty",
             _ => "Normal"
         };
 
@@ -107,6 +111,10 @@ public partial class MultiVisualPerfView : ContentView
         LogHub.Write(completed
             ? $"VS: realization batch complete (>= {expected} items bound)"
             : $"VS: timeout before {expected} items realized");
+
+        if (BindingContext is not MultiVisualPerfViewModel vm)
+            return;
+        vm.CurrentColorState = newState;
     }
 
     private void OnToggleSelectAll(object? sender, EventArgs e)
@@ -119,6 +127,65 @@ public partial class MultiVisualPerfView : ContentView
         ForceSelectorRefreshIfNeeded();
         LogHub.StopTimer();
         LogHub.Write($"ToggleSelectAll: Selected={vm.SelectedCount}");
+    }
+
+    // Alternate selection mechanism: drive selection purely by the item view model's
+    // Selected property (used by the SelectableByProperty visual state).
+    private async void OnToggleSelectAllViaPropertyAsync(object? sender, EventArgs e)
+    {
+        if (BindingContext is not MultiVisualPerfViewModel vm)
+            return;
+
+        LogHub.Write("ToggleSelectAllViaProperty: start");
+        LogHub.StartTimer();
+
+        bool allSelected = vm.Items.Count > 0 && vm.Items.All(i => i.Selected);
+        bool target = !allSelected;
+
+        var tcs = new TaskCompletionSource<bool>();
+        int seen = 0;
+
+        void Handler(object? s, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PerfItemViewModel.Color))
+            {
+                if (Interlocked.Increment(ref seen) == vm.Items.Count)
+                {
+                    tcs.TrySetResult(true);
+                }
+            }
+        }
+
+        foreach (var item in vm.Items)
+            item.PropertyChanged += Handler;
+
+
+        foreach (var item in vm.Items)
+        {
+            item.Selected = target;
+        }
+
+        LogHub.StopTimer();
+        int count = vm.Items.Count(i => i.Selected);
+        LogHub.Write($"ToggleSelectAllViaProperty: Selected={count}");
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        using (cts.Token.Register(() => tcs.TrySetResult(false)))
+        {
+            try
+            {
+                var result = await tcs.Task.ConfigureAwait(false);
+                if (!result)
+                {
+                    LogHub.Write("ToggleSelectAllViaProperty: timeout waiting for color updates");
+                }
+            }
+            finally
+            {
+                foreach (var item in vm.Items)
+                    item.PropertyChanged -= Handler;
+            }
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -207,9 +274,11 @@ public partial class MultiVisualPerfView : ContentView
     {
         if (VisualStateManager.GetVisualStateGroups(this) is not IList<VisualStateGroup> groups || groups.Count == 0)
             return false;
-        return (groups[0].CurrentState?.Name ?? "Normal") == "Selectable";
-    }
 
+        var currentState = groups[0].CurrentState?.Name ?? "Normal";
+        return currentState == "Selectable" || currentState == "SelectableByProperty";
+    }
+    /*
     // Pan gesture over transparent overlay to perform lasso selection.
     private void OnLassoPan(object? sender, PanUpdatedEventArgs e)
     {
@@ -248,99 +317,99 @@ public partial class MultiVisualPerfView : ContentView
                 break;
         }
     }
-
+     
     private void ShowLasso(double x, double y, double w, double h)
-    {
-        if (LassoRect == null) return;
-        if (!LassoRect.IsVisible) LassoRect.IsVisible = true;
-
-        // Position via Translation to avoid affecting layout.
-        LassoRect.TranslationX = x;
-        LassoRect.TranslationY = y;
-        LassoRect.WidthRequest = w;
-        LassoRect.HeightRequest = h;
-    }
-
-    private Rect CurrentLassoRect()
-    {
-        if (LassoRect == null || !LassoRect.IsVisible)
-            return Rect.Zero;
-        return new Rect(LassoRect.TranslationX, LassoRect.TranslationY, LassoRect.Width, LassoRect.Height);
-    }
-
-    private void HideLasso()
-    {
-        if (LassoRect != null)
         {
-            LassoRect.IsVisible = false;
-            LassoRect.WidthRequest = -1;
-            LassoRect.HeightRequest = -1;
-        }
-    }
+            if (LassoRect == null) return;
+            if (!LassoRect.IsVisible) LassoRect.IsVisible = true;
 
-    private void ApplyLassoSelection(MultiVisualPerfViewModel vm, Rect lasso)
-    {
-        if (lasso.Width <= 2 || lasso.Height <= 2)
-        {
-            // Treat tiny drags as clicks; nothing extra here.
-            return;
+            // Position via Translation to avoid affecting layout.
+            LassoRect.TranslationX = x;
+            LassoRect.TranslationY = y;
+            LassoRect.WidthRequest = w;
+            LassoRect.HeightRequest = h;
         }
 
-        if (ItemsCollectionView == null) return;
-
-        // Attempt to get realized item views. In MAUI, CollectionView exposes VisibleViews.
-        var visibleViewsProp = ItemsCollectionView.GetType().GetProperty("VisibleViews");
-        var visible = visibleViewsProp?.GetValue(ItemsCollectionView) as IEnumerable<View>;
-        if (visible == null)
+        private Rect CurrentLassoRect()
         {
-            LogHub.Write("Lasso: no VisibleViews; skipping.");
-            return;
+            if (LassoRect == null || !LassoRect.IsVisible)
+                return Rect.Zero;
+            return new Rect(LassoRect.TranslationX, LassoRect.TranslationY, LassoRect.Width, LassoRect.Height);
         }
 
-        var inside = new List<PerfItemViewModel>();
-
-        foreach (var view in visible)
+        private void HideLasso()
         {
-            if (view?.BindingContext is not PerfItemViewModel item) continue;
-
-            // Approximate bounds: use view.Bounds (relative to internal layout). Assume internal layout origin aligned.
-            var b = view.Bounds;
-
-            // Inflate a little if zero-sized during layout transitions
-            if (b.Width <= 0 || b.Height <= 0)
-                continue;
-
-            if (RectsIntersect(lasso, b))
-                inside.Add(item);
-        }
-
-        if (inside.Count == 0)
-        {
-            LogHub.Write("Lasso: no items inside.");
-            return;
-        }
-
-        // Decide add or remove: if every item is already selected, deselect; else add missing ones.
-        int already = inside.Count(i => vm.SelectedItems.Contains(i));
-        if (already == inside.Count)
-        {
-            vm.ApplySelection(inside, false);
-            LogHub.Write($"Lasso: removed {inside.Count} items; Selected={vm.SelectedCount}");
-        }
-        else
-        {
-            var toAdd = inside.Where(i => !vm.SelectedItems.Contains(i)).ToList();
-            if (toAdd.Count > 0)
+            if (LassoRect != null)
             {
-                vm.ApplySelection(toAdd, true);
-                LogHub.Write($"Lasso: added {toAdd.Count} items; Selected={vm.SelectedCount}");
+                LassoRect.IsVisible = false;
+                LassoRect.WidthRequest = -1;
+                LassoRect.HeightRequest = -1;
             }
+        } 
+
+        private void ApplyLassoSelection(MultiVisualPerfViewModel vm, Rect lasso)
+        {
+            if (lasso.Width <= 2 || lasso.Height <= 2)
+            {
+                // Treat tiny drags as clicks; nothing extra here.
+                return;
+            }
+
+            if (ItemsCollectionView == null) return;
+
+            // Attempt to get realized item views. In MAUI, CollectionView exposes VisibleViews.
+            var visibleViewsProp = ItemsCollectionView.GetType().GetProperty("VisibleViews");
+            var visible = visibleViewsProp?.GetValue(ItemsCollectionView) as IEnumerable<View>;
+            if (visible == null)
+            {
+                LogHub.Write("Lasso: no VisibleViews; skipping.");
+                return;
+            }
+
+            var inside = new List<PerfItemViewModel>();
+
+            foreach (var view in visible)
+            {
+                if (view?.BindingContext is not PerfItemViewModel item) continue;
+
+                // Approximate bounds: use view.Bounds (relative to internal layout). Assume internal layout origin aligned.
+                var b = view.Bounds;
+
+                // Inflate a little if zero-sized during layout transitions
+                if (b.Width <= 0 || b.Height <= 0)
+                    continue;
+
+                if (RectsIntersect(lasso, b))
+                    inside.Add(item);
+            }
+
+            if (inside.Count == 0)
+            {
+                LogHub.Write("Lasso: no items inside.");
+                return;
+            }
+
+            // Decide add or remove: if every item is already selected, deselect; else add missing ones.
+            int already = inside.Count(i => vm.SelectedItems.Contains(i));
+            if (already == inside.Count)
+            {
+                vm.ApplySelection(inside, false);
+                LogHub.Write($"Lasso: removed {inside.Count} items; Selected={vm.SelectedCount}");
+            }
+            else
+            {
+                var toAdd = inside.Where(i => !vm.SelectedItems.Contains(i)).ToList();
+                if (toAdd.Count > 0)
+                {
+                    vm.ApplySelection(toAdd, true);
+                    LogHub.Write($"Lasso: added {toAdd.Count} items; Selected={vm.SelectedCount}");
+                }
+            }
+
+            ForceSelectorRefreshIfNeeded();
         }
 
-        ForceSelectorRefreshIfNeeded();
-    }
-
-    private static bool RectsIntersect(Rect a, Rect b)
-        => a.Right >= b.Left && a.Left <= b.Right && a.Bottom >= b.Top && a.Top <= b.Bottom;
-
+        private static bool RectsIntersect(Rect a, Rect b)
+            => a.Right >= b.Left && a.Left <= b.Right && a.Bottom >= b.Top && a.Top <= b.Bottom;
+    */
 }

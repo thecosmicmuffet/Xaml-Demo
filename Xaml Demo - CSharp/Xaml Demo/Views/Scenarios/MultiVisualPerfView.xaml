@@ -5,6 +5,7 @@
              xmlns:svc="clr-namespace:Xaml_Demo.Services"
              xmlns:sel="clr-namespace:Xaml_Demo.Views.Selectors"
              xmlns:ctrl="clr-namespace:Xaml_Demo.Controls"
+             xmlns:conv="clr-namespace:Xaml_Demo.Converters"
              x:Class="Xaml_Demo.Views.Scenarios.MultiVisualPerfView"
              x:DataType="vm:MultiVisualPerfViewModel"
              Loaded="OnLoaded"
@@ -18,7 +19,7 @@
               svc:FirstBindTracker.Enable="True">
           <Grid.GestureRecognizers>
             <TapGestureRecognizer Tapped="OnItemTapped"
-                CommandParameter="{Binding .}"/>
+                                  CommandParameter="{Binding .}"/>
           </Grid.GestureRecognizers>
           <BoxView Color="{Binding Color}"
                    CornerRadius="4"/>
@@ -36,7 +37,7 @@
                 StrokeThickness="1">
           <Border.GestureRecognizers>
             <TapGestureRecognizer Tapped="OnItemTapped"
-                CommandParameter="{Binding .}"/>
+                                  CommandParameter="{Binding .}"/>
           </Border.GestureRecognizers>
           <Grid ColumnDefinitions="40,*"
                 Padding="2"
@@ -56,6 +57,18 @@
                                              PerfItemTemplate="{StaticResource PerfItemTemplate}"
                                              PerfItemTemplateSelected="{StaticResource PerfItemTemplateSelected}"
                                              SelectionContext="{StaticResource MultiVisualPerfViewModel}"/>
+
+      <!-- Converter-driven template swap (Selected bool -> DataTemplate) -->
+      <conv:SelectionToTemplateConverter x:Key="PerfItemSelectionByPropConverter"
+                                         SelectedTemplate="{StaticResource PerfItemTemplateSelected}"
+                                         UnselectedTemplate="{StaticResource PerfItemTemplate}"/>
+
+      <!-- Container template that binds Selected and picks inner template via converter -->
+      <DataTemplate x:Key="PerfItemTemplateByProp"
+                    x:DataType="vm:PerfItemViewModel">
+        <ctrl:TemplateHost Item="{Binding .}"
+                           Template="{Binding Selected, Converter={StaticResource PerfItemSelectionByPropConverter}}"/>
+      </DataTemplate>
     </ResourceDictionary>
   </ContentView.Resources>
   <VisualStateManager.VisualStateGroups>
@@ -82,6 +95,13 @@
                     Value="{StaticResource PerfItemTemplateSelector}"/>
           </VisualState.Setters>
         </VisualState>
+        <VisualState x:Name="SelectableByProperty">
+          <VisualState.Setters>
+            <Setter TargetName="ItemsCollectionView"
+                    Property="CollectionView.ItemTemplate"
+                    Value="{StaticResource PerfItemTemplateByProp}"/>
+          </VisualState.Setters>
+        </VisualState>
       </VisualStateGroup>
     </VisualStateGroupList>
   </VisualStateManager.VisualStateGroups>
@@ -92,16 +112,25 @@
     <Label Text="Multi Visual Performance"
            FontSize="18"
            FontAttributes="Bold"/>
-    <HorizontalStackLayout x:Name="ActionsLayout"
-                           Spacing="12"
-                           Grid.Row="1">
-      <Button Text="Swap Colors"
-              Clicked="OnSwapColors"/>
-      <Button Text="Change VisualState"
-              Clicked="OnChangeVisualState"/>
-      <Button Text="Toggle Select All"
-              Clicked="OnToggleSelectAll"/>
-    </HorizontalStackLayout>
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto"
+          ColumnSpacing="12"
+          VerticalOptions="Center">
+      <HorizontalStackLayout x:Name="ActionsLayout"
+                             Spacing="12"
+                             Grid.Row="1">
+        <Button Text="Swap Colors (property updates)"
+                Clicked="OnSwapColors"/>
+        <Button Text="Change VisualState"
+                Clicked="OnChangeVisualState"/>
+        <Button Text="Toggle Select All (HashSet membership)"
+                Clicked="OnToggleSelectAll"/>
+        <Button Text="Toggle Select All (ItemViewModel property)"
+                Clicked="OnToggleSelectAllViaPropertyAsync"/>
+      </HorizontalStackLayout>
+      <Label Grid.Column="1"
+             VerticalTextAlignment="Center"
+             Text="{Binding CurrentColorState}"/>
+    </Grid>
     <BoxView Grid.Row="2"
              HeightRequest="4"
              Color="{DynamicResource Secondary}"/>
@@ -112,13 +141,20 @@
               Padding="8"
               Stroke="{DynamicResource Primary}"
               StrokeThickness="1">
-        <Grid x:Name="LeftColumn">
+        <Grid x:Name="LeftColumn"
+              RowDefinitions="Auto,Auto,*">
+          <Label Text="Panel A"
+                 FontAttributes="Bold"/>
+          <Rectangle Grid.Row="1"
+                     HeightRequest="4"
+                     Fill="{DynamicResource Secondary}"/>
           <CollectionView x:Name="ItemsCollectionView"
+                          Grid.Row="2"
                           ItemsSource="{Binding Items}"
                           ItemTemplate="{StaticResource PerfItemTemplate}"/>
           <!-- Lasso overlay -->
-          <Grid x:Name="LassoLayer"
-                InputTransparent="False">
+          <!--           <Grid x:Name="LassoLayer"
+                InputTransparent="True">
             <BoxView x:Name="LassoHitSurface"
                      BackgroundColor="Transparent">
               <BoxView.GestureRecognizers>
@@ -130,19 +166,23 @@
                     Stroke="DodgerBlue"
                     StrokeThickness="2"
                     BackgroundColor="#40007ACC"/>
-          </Grid>
+          </Grid> -->
         </Grid>
       </Border>
       <Border Grid.Column="1"
-          x:Name="RightColumn"
+              x:Name="RightColumn"
               Padding="8"
               Stroke="{DynamicResource Primary}"
               StrokeThickness="1">
         <Grid x:Name="RightPanelGrid"
-            RowDefinitions="Auto,Auto,*">
+              RowDefinitions="Auto,Auto,*">
           <Label Text="Panel B"
                  FontAttributes="Bold"/>
-          <ctrl:WinUIListViewShim x:Name="RightListShim" Grid.Row="2"
+          <Rectangle Grid.Row="1"
+                     HeightRequest="4"
+                     Fill="{DynamicResource Secondary}"/>
+          <ctrl:WinUIListViewShim x:Name="RightListShim"
+                                  Grid.Row="2"
                                   ItemsSource="{Binding Items}"/>
         </Grid>
       </Border>

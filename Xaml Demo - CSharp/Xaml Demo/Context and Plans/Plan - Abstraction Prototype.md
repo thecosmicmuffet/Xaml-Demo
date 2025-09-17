@@ -1,5 +1,5 @@
 # Status
-
+PAUSED (currently working on XAML Demonstration)
 Current Step: 2
 ## Previous Step Summary
 

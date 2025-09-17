@@ -9,6 +9,9 @@ namespace Xaml_Demo.ViewModels;
 
 public sealed class MultiVisualPerfViewModel : BaseViewModel, ISelectable
 {
+    private string _currentColorState = "";
+    public String CurrentColorState { get => _currentColorState; set => SetProperty(ref _currentColorState, value); }
+
     public ObservableCollection<PerfItemViewModel> Items { get; } = new();
 
     // Selection: membership-based
