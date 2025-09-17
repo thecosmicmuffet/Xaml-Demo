@@ -28,17 +28,19 @@ namespace Xaml_Demo.ViewModels
         }
         public int SelectedCount => SelectedItems.Count;
 
-        public MultiVisualPerfViewModel()
+        private readonly ISurfaceCatalog _surfaceCatalog;
+
+        public IReadOnlyList<FrameworkSurfaceKind> OrderedSurfaceKinds => _surfaceCatalog.OrderedKinds;
+
+        public MultiVisualPerfViewModel() : this(DefaultSurfaceCatalog.Instance)
         {
-            GenerateSpectrum(1000);
         }
 
-        /// <summary>
-        /// Order in which surfaces should be materialized by the host view (Stage 1).
-        /// Enum now lives in Core; host (MAUI / future WPF) can read this ordering.
-        /// </summary>
-        public IReadOnlyList<FrameworkSurfaceKind> SurfaceOrder { get; } =
-            new[] { FrameworkSurfaceKind.MauiCollection, FrameworkSurfaceKind.WinUIListView };
+        public MultiVisualPerfViewModel(ISurfaceCatalog surfaceCatalog)
+        {
+            _surfaceCatalog = surfaceCatalog ?? throw new ArgumentNullException(nameof(surfaceCatalog));
+            GenerateSpectrum(1000);
+        }
 
         // Generates a hue spectrum of count entries. Hue advances by 1/count per item.
         private void GenerateSpectrum(int count)

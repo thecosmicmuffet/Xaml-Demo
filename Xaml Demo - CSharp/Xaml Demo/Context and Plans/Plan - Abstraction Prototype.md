@@ -1,15 +1,31 @@
 # Status
 
-Current Step: 3
+Current Step: 3 (12/20)
 
 ## Previous Iteration Summary
 
-Stage 2 tasks finalized. 
-Core migration validated via successful multi-target build. 
-Legacy ViewModel/ISelectable and FrameworkSurfaceKind stubs excluded from compilation in csproj (retained only as comments for transition). 
-NavigationHub and ScenarioCatalog evaluated and intentionally retained in MAUI layer. 
-WPF embedding strategy draft (HWND acquisition, HwndHost lifecycle, input/focus, DPI, dispatcher abstraction, UWP Island hosting, instrumentation) added to Plan.md. 
-Plan.md checklist updated to 13/13 complete and committed (commit 6496219). Ready to proceed to Stage 3 surface lifecycle refinement.
+Stage 3 dynamic surface infrastructure implemented:
+
+- Added NativeHandleRef, SurfaceInvalidatedEventArgs, extended IRenderSurface.
+- Implemented dispatcher abstraction (IUiDispatcher + MauiDispatcherAdapter + ambient + stubs for WPF/UWP) and registered in DI.
+- Centralized FrameworkSurfaceKind in Core; removed duplicate.
+- Added ISurfaceCatalog and refactored MultiVisualPerfViewModel to consume it (SurfaceOrder removed).
+- Converted MultiVisualPerfView to dynamically mount WinUI list via RightSurfaceHost; replaced static WinUI shim with runtime-created instance.
+- Added MauiCollectionSurface and WinUIListViewSurface implementations (MauiCollectionSurface currently preparatory; left CollectionView still static).
+- Updated ExistingMauiViewSurface to new interface members.
+- Plan.md checklist updated to reflect completed items.
+
+Remaining Stage 3 items (not yet implemented):
+
+- Selection/color synchronization across surfaces using dispatcher marshaling.
+- Per-surface IPerfTimer instrumentation.
+- Lifecycle state enum + logging transitions.
+- LogRouter dispatcher integration.
+- Cleanup of obsolete ViewModel / surface artifacts & dynamic left surface conversion (replace static ItemsCollectionView with host + MauiCollectionSurface).
+- Documentation updates in Plan.md for decisions & lifecycle semantics.
+- Build & validation on Windows target; commit final Stage 3 scaffolding.
+
+Current checklist status preserved below.
 
 # Plan
 
@@ -215,6 +231,29 @@ Objective: Make surfaces lifecycle-agnostic and possibly out-of-process. Actions
 - Provide adapters: `MauiDispatcherAdapter`, `WpfDispatcherAdapter`, `UwpDispatcherAdapter`.
 
 - Implement synchronization rules for selection + color swap (marshal to each surface thread before invalidation).
+
+#### Stage 3 Checklist
+
+- [x] Unify FrameworkSurfaceKind (remove duplicate from MAUI; use Core enum)
+- [x] Extend IRenderSurface (Add GetEmbedHandleAsync, Invalidated event)
+- [x] Add NativeHandleRef struct (Core/Surfaces)
+- [x] Add SurfaceInvalidatedEventArgs (Core/Surfaces)
+- [x] Introduce IUiDispatcher interface (Core/Dispatching)
+- [x] Implement MauiDispatcherAdapter and register in DI
+- [x] Implement WpfDispatcherAdapter stub (placeholder until host project added)
+- [x] Implement UwpDispatcherAdapter stub
+- [x] Add ISurfaceCatalog service returning ordered IRenderSurface instances
+- [x] Refactor MultiVisualPerfViewModel to consume ISurfaceCatalog (remove direct SurfaceOrder list)
+- [x] Refactor MultiVisualPerfView.xaml.cs to resolve and mount surfaces dynamically
+- [x] Update existing surfaces to new interface members
+- [ ] Add selection/color synchronization using dispatcher marshaling
+- [ ] Integrate IPerfTimer instrumentation (first N realized items per surface)
+- [ ] Add lifecycle state enum + logging transitions
+- [ ] Update LogRouter to optionally dispatch via IUiDispatcher
+- [ ] Remove legacy duplicates (FrameworkSurfaceKind.cs in MAUI, obsolete ViewModel files)
+- [ ] Document decisions & progress updates in Plan.md
+- [ ] Build & validate Windows target behavior
+- [ ] Commit Stage 3 initial implementation (message: "Stage3: surface lifecycle + dispatcher scaffolding")
 
 ### Stage 4 (Optional cross-process exploration)
 

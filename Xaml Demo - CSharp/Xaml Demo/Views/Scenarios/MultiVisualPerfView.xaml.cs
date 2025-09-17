@@ -9,6 +9,7 @@ using Microsoft.Maui.Graphics;
 using Xaml_Demo.Services;
 using Xaml_Demo.ViewModels;
 using Xaml_Demo.Surfaces;
+using Xaml_Demo.Controls;
 
 namespace Xaml_Demo.Views.Scenarios;
 
@@ -39,7 +40,7 @@ public partial class MultiVisualPerfView : ContentView
     {
         if (_surfaces.Count > 0) return;
 
-        foreach (var kind in vm.SurfaceOrder)
+        foreach (var kind in vm.OrderedSurfaceKinds)
         {
             switch (kind)
             {
@@ -48,8 +49,15 @@ public partial class MultiVisualPerfView : ContentView
                         _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.MauiCollection, ItemsCollectionView));
                     break;
                 case FrameworkSurfaceKind.WinUIListView:
-                    if (RightListShim != null)
-                        _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.WinUIListView, RightListShim));
+                    if (RightSurfaceHost != null)
+                    {
+                        var shim = new WinUIListViewShim
+                        {
+                            ItemsSource = vm.Items
+                        };
+                        RightSurfaceHost.Content = shim;
+                        _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.WinUIListView, shim));
+                    }
                     break;
                 case FrameworkSurfaceKind.UwpPlaceholder:
                     // Placeholder for future UWP / out-of-process surface.

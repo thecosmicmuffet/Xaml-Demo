@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
@@ -23,9 +24,17 @@ public sealed class ExistingMauiViewSurface : IRenderSurface
 
     public View? MauiViewHost => _view;
 
+    public event EventHandler<SurfaceInvalidatedEventArgs>? Invalidated;
+
     public Task InitializeAsync(object context, CancellationToken ct)
     {
         // Nothing to do for an existing view host in Stage 1.
         return Task.CompletedTask;
+    }
+
+    public Task<NativeHandleRef?> GetEmbedHandleAsync(CancellationToken ct)
+    {
+        // Existing MAUI view surface does not expose a separate native embedding handle.
+        return Task.FromResult<NativeHandleRef?>(null);
     }
 }

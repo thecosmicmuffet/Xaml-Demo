@@ -112,7 +112,8 @@
     <Label Text="Multi Visual Performance"
            FontSize="18"
            FontAttributes="Bold"/>
-    <Grid Grid.Row="1" ColumnDefinitions="*,Auto"
+    <Grid Grid.Row="1"
+          ColumnDefinitions="*,Auto"
           ColumnSpacing="12"
           VerticalOptions="Center">
       <HorizontalStackLayout x:Name="ActionsLayout"
@@ -181,9 +182,8 @@
           <Rectangle Grid.Row="1"
                      HeightRequest="4"
                      Fill="{DynamicResource Secondary}"/>
-          <ctrl:WinUIListViewShim x:Name="RightListShim"
-                                  Grid.Row="2"
-                                  ItemsSource="{Binding Items}"/>
+          <ContentView x:Name="RightSurfaceHost"
+                       Grid.Row="2"/>
         </Grid>
       </Border>
     </Grid>
