@@ -23,6 +23,7 @@ namespace Xaml_Demo.Surfaces
     {
         private readonly MultiVisualPerfViewModel _vm;
         private CollectionView? _collectionView;
+        private SurfaceLifecycleState _state = SurfaceLifecycleState.Constructed;
 
         public MauiCollectionSurface(MultiVisualPerfViewModel vm)
         {
@@ -30,6 +31,7 @@ namespace Xaml_Demo.Surfaces
         }
 
         public FrameworkSurfaceKind Kind => FrameworkSurfaceKind.MauiCollection;
+        public SurfaceLifecycleState State => _state;
 
         public View? MauiViewHost => _collectionView;
 
@@ -38,7 +40,19 @@ namespace Xaml_Demo.Surfaces
         public Task InitializeAsync(object context, CancellationToken ct)
         {
             if (_collectionView != null)
+            {
+                if (_state != SurfaceLifecycleState.Initialized)
+                {
+                    var prevExisting = _state;
+                    _state = SurfaceLifecycleState.Initialized;
+                    SurfaceLifecycle.LogTransition(Kind, prevExisting, _state, "Re-enter InitializeAsync");
+                }
                 return Task.CompletedTask;
+            }
+
+            var prev = _state;
+            _state = SurfaceLifecycleState.Initializing;
+            SurfaceLifecycle.LogTransition(Kind, prev, _state, "Creating CollectionView");
 
             // Construct CollectionView similar to original XAML definition (base template only;
             // VisualState-driven template swapping will be adapted when static instance removed).
@@ -79,6 +93,11 @@ namespace Xaml_Demo.Surfaces
 
                 return root;
             });
+
+            // Finish lifecycle transition
+            prev = _state;
+            _state = SurfaceLifecycleState.Initialized;
+            SurfaceLifecycle.LogTransition(Kind, prev, _state);
 
             return Task.CompletedTask;
         }

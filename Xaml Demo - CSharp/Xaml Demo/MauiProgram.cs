@@ -36,11 +36,13 @@ builder.Services.AddSingleton<ISurfaceCatalog>(_ => DefaultSurfaceCatalog.Instan
 var app = builder.Build();
 
 #nullable enable
-// Wire up Core logging sink (only if not already set by another host)
-Xaml_Demo.Logging.LogRouter.Sink ??= new Xaml_Demo.Services.LogSinkAdapter();
+ // Wire up Core logging sink (only if not already set by another host)
+ Xaml_Demo.Logging.LogRouter.Sink ??= new Xaml_Demo.Services.LogSinkAdapter();
+ // Provide dispatcher override for optional marshaling (Stage 3 dispatcher integration)
+ Xaml_Demo.Logging.LogRouter.DispatcherOverride ??= app.Services.GetRequiredService<Xaml_Demo.Dispatching.IUiDispatcher>();
 
-// Initialize ambient dispatcher (idempotent)
-Xaml_Demo.Dispatching.MauiDispatcherRegistration.EnsureAmbientInitialized(app.Services);
+ // Initialize ambient dispatcher (idempotent)
+ Xaml_Demo.Dispatching.MauiDispatcherRegistration.EnsureAmbientInitialized(app.Services);
 #nullable disable
 
 return app;

@@ -21,12 +21,20 @@ namespace Xaml_Demo.ViewModels
         // Selection membership (collection-level semantics).
         public HashSet<PerfItemViewModel> SelectedItems { get; } = new HashSet<PerfItemViewModel>();
         private int _selectionVersion;
+        private bool _suppressSelectionSync;
         public int SelectionVersion
         {
             get => _selectionVersion;
             private set => SetProperty(ref _selectionVersion, value);
         }
         public int SelectedCount => SelectedItems.Count;
+
+        private string _currentColorState = "Normal";
+        public string CurrentColorState
+        {
+            get => _currentColorState;
+            set => SetProperty(ref _currentColorState, value);
+        }
 
         private readonly ISurfaceCatalog _surfaceCatalog;
 
@@ -40,6 +48,7 @@ namespace Xaml_Demo.ViewModels
         {
             _surfaceCatalog = surfaceCatalog ?? throw new ArgumentNullException(nameof(surfaceCatalog));
             GenerateSpectrum(1000);
+            SubscribeItemPropertyChanged();
         }
 
         // Generates a hue spectrum of count entries. Hue advances by 1/count per item.
@@ -167,6 +176,15 @@ namespace Xaml_Demo.ViewModels
 
             if (changed.Count > 0)
             {
+                // Synchronize per-item Selected property (hybrid model) without recursion.
+                if (!_suppressSelectionSync)
+                {
+                    _suppressSelectionSync = true;
+                    foreach (var vmChanged in changed)
+                        vmChanged.Selected = select;
+                    _suppressSelectionSync = false;
+                }
+
                 RefreshItems(changed);
                 BumpSelectionVersion();
             }
@@ -203,6 +221,33 @@ namespace Xaml_Demo.ViewModels
         {
             SelectionVersion++;
             OnPropertyChanged(nameof(SelectedCount));
+        }
+
+        private void SubscribeItemPropertyChanged()
+        {
+            foreach (var item in Items)
+                item.PropertyChanged += OnItemPropertyChanged;
+        }
+
+        private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (_suppressSelectionSync) return;
+            if (e.PropertyName == nameof(PerfItemViewModel.Selected) && sender is PerfItemViewModel vm)
+            {
+                bool inSet = SelectedItems.Contains(vm);
+                if (vm.Selected && !inSet)
+                {
+                    SelectedItems.Add(vm);
+                    RefreshItems(new[] { vm });
+                    BumpSelectionVersion();
+                }
+                else if (!vm.Selected && inSet)
+                {
+                    SelectedItems.Remove(vm);
+                    RefreshItems(new[] { vm });
+                    BumpSelectionVersion();
+                }
+            }
         }
 
         public async Task<bool> AwaitColorChangesAsync(TimeSpan timeout)

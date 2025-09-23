@@ -15,6 +15,7 @@ namespace Xaml_Demo.Surfaces
     {
         private readonly MultiVisualPerfViewModel _vm;
         private View? _host;
+        private SurfaceLifecycleState _state = SurfaceLifecycleState.Constructed;
 
         public WinUIListViewSurface(MultiVisualPerfViewModel vm)
         {
@@ -25,11 +26,27 @@ namespace Xaml_Demo.Surfaces
 
         public View? MauiViewHost => _host;
 
+        public SurfaceLifecycleState State => _state;
+
         public event EventHandler<SurfaceInvalidatedEventArgs>? Invalidated;
 
         public Task InitializeAsync(object context, CancellationToken ct)
         {
-            if (_host != null) return Task.CompletedTask;
+            if (_host != null)
+            {
+                // Already created; ensure state finalized.
+                if (_state != SurfaceLifecycleState.Initialized)
+                {
+                    var prevExisting = _state;
+                    _state = SurfaceLifecycleState.Initialized;
+                    SurfaceLifecycle.LogTransition(Kind, prevExisting, _state, "Re-enter InitializeAsync");
+                }
+                return Task.CompletedTask;
+            }
+
+            var prev = _state;
+            _state = SurfaceLifecycleState.Initializing;
+            SurfaceLifecycle.LogTransition(Kind, prev, _state, "Creating WinUIListViewShim");
 
             // Create shim (handler supplied via MauiProgram)
             var asm = typeof(WinUIListViewSurface).Assembly;
@@ -49,6 +66,11 @@ namespace Xaml_Demo.Surfaces
             itemsSourceProp?.SetValue(shimView, _vm.Items);
 
             _host = shimView;
+
+            prev = _state;
+            _state = SurfaceLifecycleState.Initialized;
+            SurfaceLifecycle.LogTransition(Kind, prev, _state);
+
             return Task.CompletedTask;
         }
 

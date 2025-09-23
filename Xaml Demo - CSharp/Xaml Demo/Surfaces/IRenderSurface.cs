@@ -19,6 +19,11 @@ public interface IRenderSurface
     FrameworkSurfaceKind Kind { get; }
 
     /// <summary>
+    /// Current lifecycle state (monotonic progression).
+    /// </summary>
+    SurfaceLifecycleState State { get; }
+
+    /// <summary>
     /// If the surface can be directly hosted inside a MAUI visual tree,
     /// this returns the root MAUI View. Null if the surface is non-MAUI
     /// (e.g. future out-of-process / external composition surface).

@@ -1,5 +1,5 @@
 # Status
-ACTIVE
+PAUSED
 Implementation iteration (SelectableByProperty state + converter-based template swapping)
 
 ## Previous Step Summary

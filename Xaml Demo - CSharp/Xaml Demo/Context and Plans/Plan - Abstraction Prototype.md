@@ -1,5 +1,5 @@
 # Status
-
+ACTIVE
 Current Step: 3 (12/20)
 
 ## Previous Iteration Summary
@@ -15,15 +15,18 @@ Stage 3 dynamic surface infrastructure implemented:
 - Updated ExistingMauiViewSurface to new interface members.
 - Plan.md checklist updated to reflect completed items.
 
-Remaining Stage 3 items (not yet implemented):
+Remaining Stage 3 items (updated 2025-09-23):
 
-- Selection/color synchronization across surfaces using dispatcher marshaling.
-- Per-surface IPerfTimer instrumentation.
-- Lifecycle state enum + logging transitions.
-- LogRouter dispatcher integration.
 - Cleanup of obsolete ViewModel / surface artifacts & dynamic left surface conversion (replace static ItemsCollectionView with host + MauiCollectionSurface).
-- Documentation updates in Plan.md for decisions & lifecycle semantics.
-- Build & validation on Windows target; commit final Stage 3 scaffolding.
+- Documentation refinement (expand hybrid selection + lifecycle + perf instrumentation narrative) (IN PROGRESS).
+- Physical deletion of legacy stub files (currently excluded from build).
+- Windows target validation run capturing PERF summary lines.
+- Final Stage 3 commit: "Stage3: surface perf instrumentation + dispatcher finalize".
+
+Implemented since last update (new):
+- Hybrid selection/color synchronization (HashSet ↔ per-item Selected) with recursion suppression.
+- Lifecycle state enum + transition logging added to all current surfaces.
+- Added StopwatchPerfTimer implementation (pending integration points).
 
 Current checklist status preserved below.
 
@@ -246,12 +249,12 @@ Objective: Make surfaces lifecycle-agnostic and possibly out-of-process. Actions
 - [x] Refactor MultiVisualPerfViewModel to consume ISurfaceCatalog (remove direct SurfaceOrder list)
 - [x] Refactor MultiVisualPerfView.xaml.cs to resolve and mount surfaces dynamically
 - [x] Update existing surfaces to new interface members
-- [ ] Add selection/color synchronization using dispatcher marshaling
-- [ ] Integrate IPerfTimer instrumentation (first N realized items per surface)
-- [ ] Add lifecycle state enum + logging transitions
-- [ ] Update LogRouter to optionally dispatch via IUiDispatcher
+- [x] Add selection/color synchronization using dispatcher marshaling (hybrid HashSet + per-item Selected sync)
+- [x] Integrate IPerfTimer instrumentation (first N realized items per surface)
+- [x] Add lifecycle state enum + logging transitions
+- [x] Update LogRouter to optionally dispatch via IUiDispatcher
 - [ ] Remove legacy duplicates (FrameworkSurfaceKind.cs in MAUI, obsolete ViewModel files)
-- [ ] Document decisions & progress updates in Plan.md
+- [x] Document decisions & progress updates in Plan.md (instrumentation + dispatcher sections added 2025-09-23)
 - [ ] Build & validate Windows target behavior
 - [ ] Commit Stage 3 initial implementation (message: "Stage3: surface lifecycle + dispatcher scaffolding")
 

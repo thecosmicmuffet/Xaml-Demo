@@ -13,6 +13,7 @@ namespace Xaml_Demo.Surfaces;
 public sealed class ExistingMauiViewSurface : IRenderSurface
 {
     private readonly View _view;
+    private SurfaceLifecycleState _state = SurfaceLifecycleState.Constructed;
 
     public ExistingMauiViewSurface(FrameworkSurfaceKind kind, View view)
     {
@@ -21,6 +22,7 @@ public sealed class ExistingMauiViewSurface : IRenderSurface
     }
 
     public FrameworkSurfaceKind Kind { get; }
+    public SurfaceLifecycleState State => _state;
 
     public View? MauiViewHost => _view;
 
@@ -28,7 +30,18 @@ public sealed class ExistingMauiViewSurface : IRenderSurface
 
     public Task InitializeAsync(object context, CancellationToken ct)
     {
-        // Nothing to do for an existing view host in Stage 1.
+        if (_state == SurfaceLifecycleState.Initialized)
+            return Task.CompletedTask;
+
+        var prev = _state;
+        _state = SurfaceLifecycleState.Initializing;
+        SurfaceLifecycle.LogTransition(Kind, prev, _state, "Existing view host");
+
+        // Existing view already created; no async work yet.
+        prev = _state;
+        _state = SurfaceLifecycleState.Initialized;
+        SurfaceLifecycle.LogTransition(Kind, prev, _state);
+
         return Task.CompletedTask;
     }
 

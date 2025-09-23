@@ -10,12 +10,15 @@ using Xaml_Demo.Services;
 using Xaml_Demo.ViewModels;
 using Xaml_Demo.Surfaces;
 using Xaml_Demo.Controls;
+using Xaml_Demo.Perf;
 
 namespace Xaml_Demo.Views.Scenarios;
 
 public partial class MultiVisualPerfView : ContentView
 {
     private readonly List<IRenderSurface> _surfaces = new();
+    private int _mauiRealizationCount;
+    private bool _mauiPerfSubscribed;
 
     public MultiVisualPerfView()
     {
@@ -46,7 +49,11 @@ public partial class MultiVisualPerfView : ContentView
             {
                 case FrameworkSurfaceKind.MauiCollection:
                     if (ItemsCollectionView != null)
+                    {
                         _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.MauiCollection, ItemsCollectionView));
+                        SurfacePerfAggregator.Start(FrameworkSurfaceKind.MauiCollection, PerfConfig.FirstRealizationSampleCount);
+                        SubscribeMauiPerf();
+                    }
                     break;
                 case FrameworkSurfaceKind.WinUIListView:
                     if (RightSurfaceHost != null)
@@ -69,7 +76,8 @@ public partial class MultiVisualPerfView : ContentView
     private async void OnSwapColors(object? sender, EventArgs e)
     {
         LogHub.Write("SwapColors: start");
-        LogHub.StartTimer();
+        var perfTimer = new StopwatchPerfTimer();
+        perfTimer.Start("SwapColors");
 
         if (BindingContext is not MultiVisualPerfViewModel vm)
         {
@@ -81,7 +89,7 @@ public partial class MultiVisualPerfView : ContentView
 
         bool completed = await vm.AwaitColorChangesAsync(TimeSpan.FromSeconds(2));
 
-        LogHub.StopTimer();
+        perfTimer.Stop();
         LogHub.Write(completed
             ? "SwapColors: all updates observed"
             : "SwapColors: timeout waiting for updates");
@@ -91,6 +99,8 @@ public partial class MultiVisualPerfView : ContentView
     {
         if (VisualStateManager.GetVisualStateGroups(this) is not IList<VisualStateGroup> groups || groups.Count == 0)
             return;
+        var perfTimer = new StopwatchPerfTimer();
+        perfTimer.Start("ChangeVisualState");
 
         string current = groups[0].CurrentState?.Name ?? "Normal";
         string newState = current switch
@@ -115,7 +125,7 @@ public partial class MultiVisualPerfView : ContentView
 
         bool completed = await waitTask.ConfigureAwait(false);
 
-        LogHub.StopTimer();
+        perfTimer.Stop();
         LogHub.Write(completed
             ? $"VS: realization batch complete (>= {expected} items bound)"
             : $"VS: timeout before {expected} items realized");
@@ -130,10 +140,11 @@ public partial class MultiVisualPerfView : ContentView
         if (BindingContext is not MultiVisualPerfViewModel vm)
             return;
         LogHub.Write("ToggleSelectAll: start");
-        LogHub.StartTimer();
+        var perfTimer = new StopwatchPerfTimer();
+        perfTimer.Start("ToggleSelectAll");
         vm.ToggleSelectAll();
         ForceSelectorRefreshIfNeeded();
-        LogHub.StopTimer();
+        perfTimer.Stop();
         LogHub.Write($"ToggleSelectAll: Selected={vm.SelectedCount}");
     }
 
@@ -145,7 +156,8 @@ public partial class MultiVisualPerfView : ContentView
             return;
 
         LogHub.Write("ToggleSelectAllViaProperty: start");
-        LogHub.StartTimer();
+        var perfTimer = new StopwatchPerfTimer();
+        perfTimer.Start("ToggleSelectAllViaProperty");
 
         bool allSelected = vm.Items.Count > 0 && vm.Items.All(i => i.Selected);
         bool target = !allSelected;
@@ -173,7 +185,7 @@ public partial class MultiVisualPerfView : ContentView
             item.Selected = target;
         }
 
-        LogHub.StopTimer();
+        perfTimer.Stop();
         int count = vm.Items.Count(i => i.Selected);
         LogHub.Write($"ToggleSelectAllViaProperty: Selected={count}");
 
@@ -257,6 +269,24 @@ public partial class MultiVisualPerfView : ContentView
             FirstBindTracker.FirstBind -= Handler;
             return t.Result;
         }, TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    private void SubscribeMauiPerf()
+    {
+        if (_mauiPerfSubscribed) return;
+        FirstBindTracker.FirstBind += OnFirstBindMaui;
+        _mauiPerfSubscribed = true;
+    }
+
+    private void OnFirstBindMaui(VisualElement ve, object? ctx)
+    {
+        if (ctx == null) return;
+        SurfacePerfAggregator.RecordRealized(FrameworkSurfaceKind.MauiCollection);
+        _mauiRealizationCount++;
+        if (_mauiRealizationCount >= PerfConfig.FirstRealizationSampleCount)
+        {
+            FirstBindTracker.FirstBind -= OnFirstBindMaui;
+        }
     }
 
     // Click (tap) handler wired via DataTemplate gesture recognizers.
