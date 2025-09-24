@@ -71,40 +71,19 @@
       </DataTemplate>
     </ResourceDictionary>
   </ContentView.Resources>
+
+  <!-- Visual states retained (empty) for code-behind driven template switching after dynamic surface mount -->
   <VisualStateManager.VisualStateGroups>
     <VisualStateGroupList>
       <VisualStateGroup x:Name="ColorStates">
-        <VisualState x:Name="Normal">
-          <VisualState.Setters>
-            <Setter TargetName="ItemsCollectionView"
-                    Property="CollectionView.ItemTemplate"
-                    Value="{StaticResource PerfItemTemplate}"/>
-          </VisualState.Setters>
-        </VisualState>
-        <VisualState x:Name="Highlighted">
-          <VisualState.Setters>
-            <Setter TargetName="ItemsCollectionView"
-                    Property="CollectionView.ItemTemplate"
-                    Value="{StaticResource PerfItemTemplateSelected}"/>
-          </VisualState.Setters>
-        </VisualState>
-        <VisualState x:Name="Selectable">
-          <VisualState.Setters>
-            <Setter TargetName="ItemsCollectionView"
-                    Property="CollectionView.ItemTemplate"
-                    Value="{StaticResource PerfItemTemplateSelector}"/>
-          </VisualState.Setters>
-        </VisualState>
-        <VisualState x:Name="SelectableByProperty">
-          <VisualState.Setters>
-            <Setter TargetName="ItemsCollectionView"
-                    Property="CollectionView.ItemTemplate"
-                    Value="{StaticResource PerfItemTemplateByProp}"/>
-          </VisualState.Setters>
-        </VisualState>
+        <VisualState x:Name="Normal"/>
+        <VisualState x:Name="Highlighted"/>
+        <VisualState x:Name="Selectable"/>
+        <VisualState x:Name="SelectableByProperty"/>
       </VisualStateGroup>
     </VisualStateGroupList>
   </VisualStateManager.VisualStateGroups>
+
   <Grid RowDefinitions="Auto,Auto,Auto,*"
         Padding="8"
         RowSpacing="8">
@@ -112,6 +91,7 @@
     <Label Text="Multi Visual Performance"
            FontSize="18"
            FontAttributes="Bold"/>
+
     <Grid Grid.Row="1"
           ColumnDefinitions="*,Auto"
           ColumnSpacing="12"
@@ -132,9 +112,11 @@
              VerticalTextAlignment="Center"
              Text="{Binding CurrentColorState}"/>
     </Grid>
+
     <BoxView Grid.Row="2"
              HeightRequest="4"
              Color="{DynamicResource Secondary}"/>
+
     <Grid Grid.Row="3"
           ColumnDefinitions="*,*"
           ColumnSpacing="8">
@@ -149,12 +131,12 @@
           <Rectangle Grid.Row="1"
                      HeightRequest="4"
                      Fill="{DynamicResource Secondary}"/>
-          <CollectionView x:Name="ItemsCollectionView"
-                          Grid.Row="2"
-                          ItemsSource="{Binding Items}"
-                          ItemTemplate="{StaticResource PerfItemTemplate}"/>
-          <!-- Lasso overlay -->
-          <!--           <Grid x:Name="LassoLayer"
+          <!-- Dynamic surface host (replaces static ItemsCollectionView) -->
+          <ContentView x:Name="LeftSurfaceHost"
+                       Grid.Row="2"/>
+          <!-- Lasso overlay (disabled; to be re-attached after dynamic migration) -->
+          <!--
+          <Grid x:Name="LassoLayer"
                 InputTransparent="True">
             <BoxView x:Name="LassoHitSurface"
                      BackgroundColor="Transparent">
@@ -167,9 +149,11 @@
                     Stroke="DodgerBlue"
                     StrokeThickness="2"
                     BackgroundColor="#40007ACC"/>
-          </Grid> -->
+          </Grid>
+          -->
         </Grid>
       </Border>
+
       <Border Grid.Column="1"
               x:Name="RightColumn"
               Padding="8"
@@ -189,5 +173,4 @@
     </Grid>
 
   </Grid>
-
 </ContentView>

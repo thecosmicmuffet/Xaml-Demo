@@ -22,8 +22,8 @@ namespace Xaml_Demo.Surfaces
         private static readonly FrameworkSurfaceKind[] _ordered =
         {
             FrameworkSurfaceKind.MauiCollection,
-            FrameworkSurfaceKind.WinUIListView
-            // Future: FrameworkSurfaceKind.UwpPlaceholder (once implemented)
+            FrameworkSurfaceKind.WinUIListView,
+            FrameworkSurfaceKind.UwpPlaceholder // Added for ExternalProcessSurface (stub / simulated external)
         };
 
         private DefaultSurfaceCatalog() { }

@@ -301,6 +301,31 @@ Metrics Validation Post-Migration
 - Compare first 10 & first 50 realization timing pre/post dynamic refactor (expect negligible change; log if delta > ±5% average).
 - Verify selection bulk toggle durations remain within prior variance bounds.
 
+### Stage 4 Progress (Initial Dynamic Mount + External Stub)
+
+Completed:
+- Replaced static `ItemsCollectionView` with dynamic `LeftSurfaceHost` + runtime `MauiCollectionSurface` instantiation.
+- Updated code-behind to build surfaces via catalog; dynamic template assignment (`ApplyTemplateForState`).
+- Adjusted selection refresh and viewport estimation to use dynamic collection view reference.
+- Added `ExternalProcessSurface` (simulated out-of-process; lifecycle + invalidation signaling).
+- Extended `DefaultSurfaceCatalog` to include `FrameworkSurfaceKind.UwpPlaceholder` (stub not hostable; gracefully skipped).
+- Removed XAML VisualState template setters; logic now centralized in code-behind for clearer dynamic host demonstration.
+
+Pending (next commit goals):
+- Run perf validation pass; log first-N realization deltas pre/post migration.
+- Optional: attach FirstBindTracker attribute programmatically in `MauiCollectionSurface` if deeper instrumentation needed.
+- Document perf comparison deltas (append to ChangeLog + Plan once captured).
+
+Risks Observed / Mitigated:
+- Template reassignment still forces selector reevaluation only in Selectable state—confirmed via dynamic path.
+- No null reference guards missing for `_mauiCollectionView`; defensive checks added.
+- ExternalProcessSurface currently silent if catalog ordering changes; host skip path validated.
+
+Next Steps (prior to WPF host work):
+1. Perf validation & documentation.
+2. Introduce percentiles computation in `SurfacePerfAggregator` (p50/p90) (scoped change).
+3. Prepare WPF host scaffolding section (HWND acquisition prototype outline).
+
 ### Stage 4 (Optional cross-process exploration)
 
 Objective: Replace in-proc HWND parenting with true cross-process visuals. Options:

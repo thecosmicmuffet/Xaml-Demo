@@ -19,6 +19,7 @@ public partial class MultiVisualPerfView : ContentView
     private readonly List<IRenderSurface> _surfaces = new();
     private int _mauiRealizationCount;
     private bool _mauiPerfSubscribed;
+    private CollectionView? _mauiCollectionView; // dynamic left surface instance
 
     public MultiVisualPerfView()
     {
@@ -29,48 +30,61 @@ public partial class MultiVisualPerfView : ContentView
         vm.CurrentColorState = "Normal";
     }
 
-    private void OnLoaded(object? sender, EventArgs e)
+    private async void OnLoaded(object? sender, EventArgs e)
     {
         if (BindingContext is MultiVisualPerfViewModel vm)
         {
             vm.PropertyChanged -= OnViewModelPropertyChanged;
             vm.PropertyChanged += OnViewModelPropertyChanged;
-            EnsureSurfaces(vm);
+            await EnsureSurfacesAsync(vm);
         }
     }
 
-    private void EnsureSurfaces(MultiVisualPerfViewModel vm)
+    private Task EnsureSurfacesAsync(MultiVisualPerfViewModel vm)
     {
-        if (_surfaces.Count > 0) return;
+        if (_surfaces.Count > 0) return Task.CompletedTask;
 
         foreach (var kind in vm.OrderedSurfaceKinds)
         {
             switch (kind)
             {
                 case FrameworkSurfaceKind.MauiCollection:
-                    if (ItemsCollectionView != null)
+                    if (LeftSurfaceHost != null)
                     {
-                        _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.MauiCollection, ItemsCollectionView));
-                        SurfacePerfAggregator.Start(FrameworkSurfaceKind.MauiCollection, PerfConfig.FirstRealizationSampleCount);
-                        SubscribeMauiPerf();
+                        var surf = new MauiCollectionSurface(vm);
+                        // Initialize (synchronous currently)
+                        surf.InitializeAsync(vm, CancellationToken.None).GetAwaiter().GetResult();
+                        var host = surf.MauiViewHost;
+                        if (host != null)
+                        {
+                            _mauiCollectionView = host as CollectionView;
+                            LeftSurfaceHost.Content = host;
+                            _surfaces.Add(surf);
+                            SurfacePerfAggregator.Start(FrameworkSurfaceKind.MauiCollection, PerfConfig.FirstRealizationSampleCount);
+                            SubscribeMauiPerf();
+                        }
                     }
                     break;
                 case FrameworkSurfaceKind.WinUIListView:
                     if (RightSurfaceHost != null)
                     {
-                        var shim = new WinUIListViewShim
+                        var surf = new WinUIListViewSurface(vm);
+                        surf.InitializeAsync(vm, CancellationToken.None).GetAwaiter().GetResult();
+                        var host = surf.MauiViewHost;
+                        if (host != null)
                         {
-                            ItemsSource = vm.Items
-                        };
-                        RightSurfaceHost.Content = shim;
-                        _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.WinUIListView, shim));
+                            RightSurfaceHost.Content = host;
+                            _surfaces.Add(surf);
+                        }
                     }
                     break;
                 case FrameworkSurfaceKind.UwpPlaceholder:
-                    // Placeholder for future UWP / out-of-process surface.
+                    // External / simulated or placeholder surface not hostable in-process (no MAUI view).
                     break;
             }
         }
+
+        return Task.CompletedTask;
     }
 
     private async void OnSwapColors(object? sender, EventArgs e)
@@ -113,6 +127,9 @@ public partial class MultiVisualPerfView : ContentView
 
         LogHub.Write("VS: start");
         LogHub.StartTimer();
+
+        // Dynamically assign ItemTemplate based on target visual state (since XAML setters were removed).
+        ApplyTemplateForState(newState);
 
         // Expected number of item realizations to consider viewport "ready"
         int expected = EstimateViewportTarget();
@@ -219,25 +236,47 @@ public partial class MultiVisualPerfView : ContentView
 
     private void ForceSelectorRefreshIfNeeded()
     {
+        if (_mauiCollectionView == null) return;
         if (VisualStateManager.GetVisualStateGroups(this) is not IList<VisualStateGroup> groups || groups.Count == 0)
             return;
         string state = groups[0].CurrentState?.Name ?? "Normal";
         if (state == "Selectable")
         {
-            // Re-assign template to force DataTemplateSelector reevaluation
-            var current = ItemsCollectionView.ItemTemplate;
-            ItemsCollectionView.ItemTemplate = null;
-            ItemsCollectionView.ItemTemplate = current;
+            var current = _mauiCollectionView.ItemTemplate;
+            _mauiCollectionView.ItemTemplate = null;
+            _mauiCollectionView.ItemTemplate = current;
+        }
+    }
+
+    private void ApplyTemplateForState(string state)
+    {
+        if (_mauiCollectionView == null) return;
+        if (Resources == null) return;
+
+        DataTemplate? Resolve(string key)
+            => Resources.TryGetValue(key, out var obj) ? obj as DataTemplate : null;
+
+        DataTemplate? template = state switch
+        {
+            "Normal" => Resolve("PerfItemTemplate"),
+            "Highlighted" => Resolve("PerfItemTemplateSelected"),
+            "Selectable" => Resolve("PerfItemTemplateSelector"),
+            "SelectableByProperty" => Resolve("PerfItemTemplateByProp"),
+            _ => Resolve("PerfItemTemplate")
+        };
+
+        if (template != null && _mauiCollectionView.ItemTemplate != template)
+        {
+            _mauiCollectionView.ItemTemplate = template;
         }
     }
 
     private int EstimateViewportTarget()
     {
-        // Simple heuristic. If height known, approximate by assuming ~24px per row.
-        double h = ItemsCollectionView.Height;
+        double h = _mauiCollectionView?.Height ?? double.NaN;
         if (double.IsNaN(h) || h <= 0)
-            return 30; // fallback
-        int estimate = (int)Math.Ceiling(h / 24.0) + 5; // small buffer
+            return 30;
+        int estimate = (int)Math.Ceiling(h / 24.0) + 5;
         if (estimate < 15) estimate = 15;
         if (estimate > 100) estimate = 100;
         return estimate;
