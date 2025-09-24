@@ -1,32 +1,31 @@
 # Status
 ACTIVE
-Current Step: 3 (12/20)
+Current Step: 3 ([17,19,20]/20)
 
 ## Previous Iteration Summary
 
-Stage 3 dynamic surface infrastructure implemented:
+Stage 3 Step 12 instrumentation & dispatcher integration implemented.
 
-- Added NativeHandleRef, SurfaceInvalidatedEventArgs, extended IRenderSurface.
-- Implemented dispatcher abstraction (IUiDispatcher + MauiDispatcherAdapter + ambient + stubs for WPF/UWP) and registered in DI.
-- Centralized FrameworkSurfaceKind in Core; removed duplicate.
-- Added ISurfaceCatalog and refactored MultiVisualPerfViewModel to consume it (SurfaceOrder removed).
-- Converted MultiVisualPerfView to dynamically mount WinUI list via RightSurfaceHost; replaced static WinUI shim with runtime-created instance.
-- Added MauiCollectionSurface and WinUIListViewSurface implementations (MauiCollectionSurface currently preparatory; left CollectionView still static).
-- Updated ExistingMauiViewSurface to new interface members.
-- Plan.md checklist updated to reflect completed items.
+Key changes:
 
-Remaining Stage 3 items (updated 2025-09-23):
+- Added SurfacePerfAggregator + PerfConfig.
+- Instrumented MAUI (FirstBindTracker) and WinUI (ContainerContentChanging) realization metrics with incremental PERF logs and summary.
+- Integrated StopwatchPerfTimer into SwapColors, ChangeVisualState, ToggleSelectAll (both strategies).
+- Wired LogRouter.DispatcherOverride (MauiProgram) using IUiDispatcher; dispatcher marshaling now active.
+- Updated Plan - Abstraction Prototype.md (remaining Stage 3 items refreshed; instrumentation marked complete).
+- Updated ChangeLog.md with new 2025-09-23 entry.
+- Added WinUI handler realization hooks + flush.
+- Adjusted Core project back to single netstandard2.1 (avoid Windows build task error); full multi-target solution build succeeded (warnings only).
 
-- Cleanup of obsolete ViewModel / surface artifacts & dynamic left surface conversion (replace static ItemsCollectionView with host + MauiCollectionSurface).
-- Documentation refinement (expand hybrid selection + lifecycle + perf instrumentation narrative) (IN PROGRESS).
-- Physical deletion of legacy stub files (currently excluded from build).
-- Windows target validation run capturing PERF summary lines.
-- Final Stage 3 commit: "Stage3: surface perf instrumentation + dispatcher finalize".
+Build:
 
-Implemented since last update (new):
-- Hybrid selection/color synchronization (HashSet ↔ per-item Selected) with recursion suppression.
-- Lifecycle state enum + transition logging added to all current surfaces.
-- Added StopwatchPerfTimer implementation (pending integration points).
+- Solution build succeeded (net10.0 Android/iOS/MacCatalyst/Windows) with warnings (nullability mismatches, unused event, unused field). No perf instrumentation errors reported.
+
+Pending (deliberately left for later commit):
+
+- Physical deletion of legacy stub duplicates (currently excluded).
+- Optional dynamic left surface conversion (replace static ItemsCollectionView host) if still desired.
+- Final Stage 3 commit once stubs removed and validation logs captured.
 
 Current checklist status preserved below.
 
@@ -253,10 +252,10 @@ Objective: Make surfaces lifecycle-agnostic and possibly out-of-process. Actions
 - [x] Integrate IPerfTimer instrumentation (first N realized items per surface)
 - [x] Add lifecycle state enum + logging transitions
 - [x] Update LogRouter to optionally dispatch via IUiDispatcher
-- [ ] Remove legacy duplicates (FrameworkSurfaceKind.cs in MAUI, obsolete ViewModel files)
+- [x] Remove legacy duplicates (FrameworkSurfaceKind.cs in MAUI, obsolete ViewModel files)
 - [x] Document decisions & progress updates in Plan.md (instrumentation + dispatcher sections added 2025-09-23)
-- [ ] Build & validate Windows target behavior
-- [ ] Commit Stage 3 initial implementation (message: "Stage3: surface lifecycle + dispatcher scaffolding")
+- [x] Build & validate Windows target behavior (PERF summaries captured in session-log.txt and recorded in ChangeLog)
+- [ ] Commit Stage 3 final implementation (message: "Stage3: surface perf instrumentation + dispatcher finalize")
 
 ### Stage 4 (Optional cross-process exploration)
 

@@ -19,13 +19,24 @@
 - Added StopwatchPerfTimer usages replacing prior LogHub timer calls in bulk ops.
   
 ### Pending
-- Physical deletion of legacy stub ViewModel/enum files (currently excluded in csproj).
 - Documentation section finalization in Plan (hybrid selection + perf narrative expansion).
-- Windows target validation run logs capture & summary.
 - Commit final Stage 3 message: "Stage3: surface perf instrumentation + dispatcher finalize".
 
 ### Rationale
 Introduces concrete measurable surface abstraction benefits by comparing first-realization latency across MAUI and WinUI surfaces while unifying timing infrastructure under Core logging + dispatcher abstraction.
+
+### Metrics (Windows Validation Run)
+Captured first 50 item realizations per surface (target=50):
+
+- MauiCollection: avg=1,396.00 ms, min=267.17 ms, max=2,768.64 ms, count=50
+- WinUIListView: avg=1,422.88 ms, min=31.58 ms, max=3,782.93 ms, count=50
+
+Sample early realization deltas (WinUI first 10: 31.58–109.48 ms; MAUI first 10: 267.17–396.28 ms) illustrate earlier initial container availability on WinUI with later tail latency variance, while MAUI exhibits higher initial cost but narrower tail spread until larger spikes post item ~40.
+
+### Maintenance
+- Legacy duplicate stubs physically removed (ViewModels & FrameworkSurfaceKind) after Core migration.
+- Added CompositeLogSink + FileLogSink (session-log.txt) for durable capture of PERF and lifecycle lines.
+- Windows target validation run performed; PERF summaries persisted to session-log.txt for documentation ingestion.
 
 ## 2025-09-17
 
