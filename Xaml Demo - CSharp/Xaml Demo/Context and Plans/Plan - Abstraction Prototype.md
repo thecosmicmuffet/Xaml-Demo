@@ -1,33 +1,20 @@
 # Status
 ACTIVE
-Current Step: 3 ([17,19,20]/20)
+Current Step: 4
 
 ## Previous Iteration Summary
 
-Stage 3 Step 12 instrumentation & dispatcher integration implemented.
+Stage 3 items (17,19,20) completed:
 
-Key changes:
+- Removed legacy duplicate stubs (enum + ViewModels) and updated Plan checklist.
+- Added FileLogSink + CompositeLogSink; wired in MauiProgram; generated session-log.txt.
+- Ran Windows target; captured PERF realization metrics (50 items per surface) and appended summarized metrics to ChangeLog.
+- Updated ChangeLog (added Metrics + Maintenance sections) and Plan (checked off removal + validation).
+- Committed final Stage 3 implementation with message: "Stage3: surface perf instrumentation + dispatcher finalize". Artifacts:
+- session-log.txt (perf raw data)
+- Xaml.Demo.Core/Logging/AdditionalSinks.cs
+- Updated ChangeLog.md & Plan - Abstraction Prototype.md No build errors; warnings only (nullability, unused members). Ready to proceed to Stage 4 planning when desired.
 
-- Added SurfacePerfAggregator + PerfConfig.
-- Instrumented MAUI (FirstBindTracker) and WinUI (ContainerContentChanging) realization metrics with incremental PERF logs and summary.
-- Integrated StopwatchPerfTimer into SwapColors, ChangeVisualState, ToggleSelectAll (both strategies).
-- Wired LogRouter.DispatcherOverride (MauiProgram) using IUiDispatcher; dispatcher marshaling now active.
-- Updated Plan - Abstraction Prototype.md (remaining Stage 3 items refreshed; instrumentation marked complete).
-- Updated ChangeLog.md with new 2025-09-23 entry.
-- Added WinUI handler realization hooks + flush.
-- Adjusted Core project back to single netstandard2.1 (avoid Windows build task error); full multi-target solution build succeeded (warnings only).
-
-Build:
-
-- Solution build succeeded (net10.0 Android/iOS/MacCatalyst/Windows) with warnings (nullability mismatches, unused event, unused field). No perf instrumentation errors reported.
-
-Pending (deliberately left for later commit):
-
-- Physical deletion of legacy stub duplicates (currently excluded).
-- Optional dynamic left surface conversion (replace static ItemsCollectionView host) if still desired.
-- Final Stage 3 commit once stubs removed and validation logs captured.
-
-Current checklist status preserved below.
 
 # Plan
 
@@ -255,7 +242,64 @@ Objective: Make surfaces lifecycle-agnostic and possibly out-of-process. Actions
 - [x] Remove legacy duplicates (FrameworkSurfaceKind.cs in MAUI, obsolete ViewModel files)
 - [x] Document decisions & progress updates in Plan.md (instrumentation + dispatcher sections added 2025-09-23)
 - [x] Build & validate Windows target behavior (PERF summaries captured in session-log.txt and recorded in ChangeLog)
-- [ ] Commit Stage 3 final implementation (message: "Stage3: surface perf instrumentation + dispatcher finalize")
+- [x] Commit Stage 3 final implementation (message: "Stage3: surface perf instrumentation + dispatcher finalize")
+
+### Instrumentation Summary (Stage 3)
+
+Captured first 50 item realizations per surface (target = 50) using SurfacePerfAggregator + FirstBindTracker / ContainerContentChanging:
+
+- MauiCollection: avg=1,396.00 ms, min=267.17 ms, max=2,768.64 ms, count=50
+- WinUIListView: avg=1,422.88 ms, min=31.58 ms, max=3,782.93 ms, count=50
+
+Observations:
+- WinUI surface produces earliest first realizations (31–109 ms first 10) indicating faster initial container availability.
+- MAUI surface shows higher initial cost but tighter mid‑range distribution (reduced variance until late tail > item ~40).
+- Tail latency spikes higher on WinUI (max ~3.78s) suggesting deferred template/materialization bursts.
+- Hybrid selection synchronization (HashSet + per-item Selected) ensured consistent selection visuals across both surfaces without extra template churn (Replace notifications only for changed items).
+- Dispatcher override confirmed: LogRouter marshals when DispatcherOverride present; no deadlocks observed in timing operations.
+
+Next Metric Enhancements (planned Stage 4+):
+- Distribution percentiles (p50 / p90 / p99) for first-N.
+- Allocation counters during bulk selection & state transitions.
+- Cross-surface diff summary (delta of avg & min) emitted in single PERF summary line.
+
+### Stage 4 (Optional cross-process exploration)
+
+#### Stage 4 Path C Detailed Plan (Chosen)
+
+Phase 4A: Dynamic Mount Migration
+- Remove static `ItemsCollectionView` from XAML; introduce `LeftSurfaceHost` (`ContentView`) analogous to existing `RightSurfaceHost`.
+- Move all item template resources that remain necessary into a shared ResourceDictionary or into `MauiCollectionSurface` construction (base template already present).
+- Update visual state setters to apply to dynamic CollectionView instance (store reference after surface InitializeAsync; programmatic `GoToState` remains unchanged).
+- Refactor `ForceSelectorRefreshIfNeeded` to reference dynamic instance (injected field).
+- Ensure perf instrumentation still subscribes (re-wire FirstBindTracker enabling attribute or attach handler in surface creation).
+
+Phase 4B: ExternalProcessSurface Stub
+- Add `ExternalProcessSurface : IRenderSurface` (Kind: reuse `UwpPlaceholder` or introduce `ExternalSim` if enum extension acceptable).
+- `InitializeAsync`: delay (e.g. 150–250 ms) to simulate startup; transition lifecycle states; raise `Invalidated(DataChanged,"SimExternalReady")`.
+- `MauiViewHost` => null; `GetEmbedHandleAsync` returns null (placeholder).
+- Catalog: optionally append; host logic skips mounting when `MauiViewHost` null (log diagnostic for visibility).
+
+Phase 4C: Documentation & Risk Update
+- Plan document: record rationale for separating dynamic mount before real WPF host (reduces coupling & simplifies diff when adding HWND embedding).
+- Add risk table entries: template state transitions after dynamic migration, selection refresh invariants, lasso reactivation strategy (currently disabled code remains reference).
+- Add “Next Host Tasks” preface listing WPF host scaffolding steps.
+
+Deferred (Stage 4 subsequent commits)
+- Add WPF host project (`Xaml.Demo.Host.Wpf`) with `MauiBootstrapper` + `MauiHwndHost`.
+- Provide `MauiWindowSurface` exposing MAUI root HWND via `GetEmbedHandleAsync`.
+- IPC / shared swapchain experimentation groundwork (decide on DirectComposition vs D3DImage path).
+
+Success Criteria for Initial Stage 4 Commit
+- App runs with dynamically mounted left & right surfaces (no static `ItemsCollectionView` in XAML).
+- Visual states function identically across new dynamic instance.
+- Perf metrics still recorded for both surfaces (no regression in first-N capture).
+- ExternalProcessSurface stub logs lifecycle + invalidation without affecting layout.
+- Plan & ChangeLog updated (this document + ChangeLog).
+
+Metrics Validation Post-Migration
+- Compare first 10 & first 50 realization timing pre/post dynamic refactor (expect negligible change; log if delta > ±5% average).
+- Verify selection bulk toggle durations remain within prior variance bounds.
 
 ### Stage 4 (Optional cross-process exploration)
 

@@ -18,9 +18,10 @@
 - Plan - Abstraction Prototype.md (pending update for instrumentation section & checklist—see next commit).
 - Added StopwatchPerfTimer usages replacing prior LogHub timer calls in bulk ops.
   
-### Pending
-- Documentation section finalization in Plan (hybrid selection + perf narrative expansion).
-- Commit final Stage 3 message: "Stage3: surface perf instrumentation + dispatcher finalize".
+### Completed (Stage 3 Finalization)
+- Documentation section finalized in Plan (hybrid selection + perf narrative + instrumentation summary).
+- Stage 3 finalized (commit planned / executed: "Stage3: surface perf instrumentation + dispatcher finalize"); Plan checklist updated (all Stage 3 items checked).
+- Instrumentation summary (first 50 realization metrics per surface) added to Plan; cross-reference maintained here for historical continuity.
 
 ### Rationale
 Introduces concrete measurable surface abstraction benefits by comparing first-realization latency across MAUI and WinUI surfaces while unifying timing infrastructure under Core logging + dispatcher abstraction.
