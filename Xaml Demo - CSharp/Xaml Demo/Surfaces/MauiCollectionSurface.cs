@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 using Xaml_Demo.ViewModels;
+using Xaml_Demo.Services;
 
 namespace Xaml_Demo.Surfaces
 {
@@ -74,6 +75,8 @@ namespace Xaml_Demo.Surfaces
                     },
                     Padding = 2
                 };
+                // Enable first-bind tracking so MAUI surface realizations are captured
+                FirstBindTracker.SetEnable(root, true);
 
                 var colorBox = new BoxView
                 {

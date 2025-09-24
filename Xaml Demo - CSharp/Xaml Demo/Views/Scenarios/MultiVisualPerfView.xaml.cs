@@ -11,6 +11,7 @@ using Xaml_Demo.ViewModels;
 using Xaml_Demo.Surfaces;
 using Xaml_Demo.Controls;
 using Xaml_Demo.Perf;
+using System.Runtime.CompilerServices;
 
 namespace Xaml_Demo.Views.Scenarios;
 
@@ -20,6 +21,7 @@ public partial class MultiVisualPerfView : ContentView
     private int _mauiRealizationCount;
     private bool _mauiPerfSubscribed;
     private CollectionView? _mauiCollectionView; // dynamic left surface instance
+    private int _mauiSessionId;
 
     public MultiVisualPerfView()
     {
@@ -60,7 +62,7 @@ public partial class MultiVisualPerfView : ContentView
                             _mauiCollectionView = host as CollectionView;
                             LeftSurfaceHost.Content = host;
                             _surfaces.Add(surf);
-                            SurfacePerfAggregator.Start(FrameworkSurfaceKind.MauiCollection, PerfConfig.FirstRealizationSampleCount);
+                            _mauiSessionId = SurfacePerfAggregator.Start(FrameworkSurfaceKind.MauiCollection, PerfConfig.FirstRealizationSampleCount);
                             SubscribeMauiPerf();
                         }
                     }
@@ -320,7 +322,7 @@ public partial class MultiVisualPerfView : ContentView
     private void OnFirstBindMaui(VisualElement ve, object? ctx)
     {
         if (ctx == null) return;
-        SurfacePerfAggregator.RecordRealized(FrameworkSurfaceKind.MauiCollection);
+        SurfacePerfAggregator.RecordRealized(FrameworkSurfaceKind.MauiCollection, RuntimeHelpers.GetHashCode(ve), _mauiSessionId, "FirstBindTracker");
         _mauiRealizationCount++;
         if (_mauiRealizationCount >= PerfConfig.FirstRealizationSampleCount)
         {

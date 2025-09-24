@@ -4,16 +4,7 @@ Current Step: 4
 
 ## Previous Iteration Summary
 
-Stage 3 items (17,19,20) completed:
-
-- Removed legacy duplicate stubs (enum + ViewModels) and updated Plan checklist.
-- Added FileLogSink + CompositeLogSink; wired in MauiProgram; generated session-log.txt.
-- Ran Windows target; captured PERF realization metrics (50 items per surface) and appended summarized metrics to ChangeLog.
-- Updated ChangeLog (added Metrics + Maintenance sections) and Plan (checked off removal + validation).
-- Committed final Stage 3 implementation with message: "Stage3: surface perf instrumentation + dispatcher finalize". Artifacts:
-- session-log.txt (perf raw data)
-- Xaml.Demo.Core/Logging/AdditionalSinks.cs
-- Updated ChangeLog.md & Plan - Abstraction Prototype.md No build errors; warnings only (nullability, unused members). Ready to proceed to Stage 4 planning when desired.
+Stage 4 initial objectives implemented and committed: dynamic left surface mount (LeftSurfaceHost), runtime template switching, code-behind visual state template application, catalog inclusion of UwpPlaceholder, ExternalProcessSurface stub added, perf build validated (clean after handle-lock rebuild). Plan updated with Stage 4 progress and risks. Ready to proceed to perf delta capture and WPF host scaffolding planning.
 
 
 # Plan
@@ -422,3 +413,31 @@ foreach (var kind in vm.SurfaceOrder)
 ## Recommendation
 
 Proceed with Stage 1 refactor inside existing MAUI project before adding new WPF host. That yields a stable abstraction boundary and de-risks later platform integration.
+
+## Stage 4 Perf Validation – Run 1 (Post Dynamic Mount, Percentile Instrumentation Enabled)
+
+Source log timestamp: 2025-09-24 13:18:32 (session=1)
+
+Collected first-N (N=50) realization metrics for both surfaces with new percentile + readiness pipeline:
+
+| Surface | avg (ms) | min | p50 | p90 | p99 | max | dup | tail | readiness |
+|---------|----------|-----|-----|-----|-----|-----|-----|------|-----------|
+| MauiCollection | 479.00 | 30.42 | 236.19 | 1,327.26 | 1,645.71 | 1,645.71 | 0 | 0 | Ready |
+| WinUIListView  | 1,439.68 | 39.05 | 1,252.57 | 2,932.36 | 3,240.92 | 3,240.92 | 0 | 0 | Ready |
+
+Delta vs Stage 3 (pre‑dynamic mount baseline):
+- Maui avg improved: 1,396.00 ms → 479.00 ms (−65.7%). Earlier stable mid distribution; reduced long tail (old max 2,768.64 ms now 1,645.71 ms).
+- WinUI avg roughly flat: 1,422.88 ms → 1,439.68 ms (+1.2%). Tail max reduced (3,782.93 → 3,240.92 ms) indicating some late outlier shrinkage.
+- Maui min improved dramatically (267.17 → 30.42 ms) reflecting earlier first container availability after dynamic mount + template path simplification.
+- Percentile spread (Maui): p50 well below old average, indicating front-half readiness achieved substantially earlier; p90 < old average, tail compression evident.
+- Readiness Classification: Both Ready with zero tail overflow (no post-window churn recorded in first session).
+
+Preliminary Interpretation:
+- Dynamic surface mount + direct template assignment reduced initial MAUI binding overhead (less XAML setter indirection and no initial selector toggling).
+- WinUI path unchanged; variance remains dominated by container creation bursts; further optimization may target virtualization thresholds or deferred template phases.
+- Next run will confirm stability (guard against unusually favorable GC/CPU conditions). If second run corroborates, document architectural rationale (reduced visual tree churn & deferred selector reapplication) in ChangeLog addendum.
+
+Next Actions:
+1. Perform second cold run to confirm MauiCollection average remains < 550 ms and WinUI within ±5% of prior average.
+2. Append comparative delta table & narrative to ChangeLog (2025-09-24 section).
+3. Mark perf validation checklist items complete; proceed to readiness classification documentation & commit.

@@ -6,6 +6,7 @@ using WinUIListViewBase = Microsoft.UI.Xaml.Controls.ListViewBase;
 using WinUIContainerContentChangingEventArgs = Microsoft.UI.Xaml.Controls.ContainerContentChangingEventArgs;
 using Xaml_Demo.Perf;
 using Xaml_Demo.Surfaces;
+using System.Runtime.CompilerServices;
 
 namespace Xaml_Demo.Controls;
 
@@ -31,13 +32,14 @@ public class WinUIListViewShimHandler : ViewHandler<WinUIListViewShim, WinUIList
     };
 
     private int _realizationCount;
+    private int _sessionId;
 
     protected override void ConnectHandler(WinUIListView platformView)
     {
         base.ConnectHandler(platformView);
 
         // Start perf aggregation for WinUI surface
-        SurfacePerfAggregator.Start(FrameworkSurfaceKind.WinUIListView, PerfConfig.FirstRealizationSampleCount);
+        _sessionId = SurfacePerfAggregator.Start(FrameworkSurfaceKind.WinUIListView, PerfConfig.FirstRealizationSampleCount);
 
         platformView.ContainerContentChanging += OnContainerContentChanging;
 
@@ -59,7 +61,8 @@ public class WinUIListViewShimHandler : ViewHandler<WinUIListViewShim, WinUIList
         if (args.InRecycleQueue) return;
         if (args.Item == null) return;
 
-        SurfacePerfAggregator.RecordRealized(FrameworkSurfaceKind.WinUIListView);
+        var cid = args.ItemContainer != null ? RuntimeHelpers.GetHashCode(args.ItemContainer) : RuntimeHelpers.GetHashCode(sender);
+        SurfacePerfAggregator.RecordRealized(FrameworkSurfaceKind.WinUIListView, cid, _sessionId, "ContainerContentChanging");
         _realizationCount++;
         if (_realizationCount >= PerfConfig.FirstRealizationSampleCount)
         {
