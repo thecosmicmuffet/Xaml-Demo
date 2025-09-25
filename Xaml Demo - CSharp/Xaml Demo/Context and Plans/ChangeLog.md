@@ -63,6 +63,40 @@ Readiness Interpretation:
 Next (Planned):
 - Optional Run 3; if WinUI avg remains >1,520 ms, open investigation task (container recycling pacing, potential batching).
 
+### Step 5 Partial WPF Host Scaffold (Documented)
+#### Added
+- New WPF host project `Xaml.Demo.Host.Wpf` (net10.0-windows, pure WPF; no WindowsAppSDK packaging).
+- Reflection-based `MauiBootstrapper` (loads MAUI assembly, attempts service + HWND acquisition without direct project reference).
+- `MauiHwndHost` (HWND re-parent wrapper) created (embedding path prepared).
+- `MainWindow` layout scaffold:
+  - Column 0: MAUI surface placeholder + status text.
+  - Column 1: WPF `ListBox` bound to Core `MultiVisualPerfViewModel.Items` (1000 color items).
+  - Bottom row: log console (`TextBox`) wired via `WpfTextBoxLogSink`.
+- Logging integration: Composite sink (UI textbox + file sink) when no prior sink assigned.
+- Selection + color swap commands hooked (Toggle Select All, Swap Colors) invoking existing Core VM logic.
+
+#### Deferred / Not Yet Implemented
+- Reliable HWND acquisition & embed (reflection path may yield null handle; no forced MAUI window creation yet).
+- Lifecycle logging sequence (HostConstructed → MauiBootstrapping → MauiReady → Embedded).
+- WPF surface catalog abstraction (currently single VM-driven list + placeholder; no multi-surface orchestration).
+- Cross-surface perf validation comparing WPF ListBox first-N realization vs MAUI / WinUI surfaces.
+- Risk table updates (focus routing, DPI scaling, child lifetime detach ordering).
+- Allocation / timing probes for WPF first-N materializations.
+- Forced MAUI Window instantiation to guarantee handle (planned).
+
+#### Issues / Constraints
+- WindowsAppSDK package introduction triggered PRI task failure (ExpandPriContent) under .NET 10 preview SDK; removed to maintain build focus on Core + WPF only.
+- Win2D warning persists (WIN2D0001) but non-blocking; packaging / architecture alignment deferred.
+
+#### Rationale
+Documenting partial scaffold provides a stable reference point for abstraction boundary evaluation and future cross-process / external surface integration while isolating WindowsAppSDK tooling friction from immediate MVVM + surface orchestration goals.
+
+#### Next Actions (Step 5 Completion Path)
+1. Add lifecycle logging + risk table (focus/DPI/cleanup).
+2. Guarantee HWND (force MAUI Window creation) and validate embedding.
+3. Capture first-N realization metrics for WPF ListBox; compare percentile spread vs existing surfaces.
+4. Update Plan Step 5 section with risk entries & metric deltas; mark Step 5 complete.
+
 ## 2025-09-23
 ### Added
 - SurfacePerfAggregator (first-N realization metrics per surface).

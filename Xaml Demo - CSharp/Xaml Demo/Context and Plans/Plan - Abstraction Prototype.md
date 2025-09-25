@@ -1,11 +1,28 @@
 # Status
 ACTIVE
-Current Step: 4
+Current Step: 5
 
 ## Previous Iteration Summary
 
-Stage 4 initial objectives implemented and committed: dynamic left surface mount (LeftSurfaceHost), runtime template switching, code-behind visual state template application, catalog inclusion of UwpPlaceholder, ExternalProcessSurface stub added, perf build validated (clean after handle-lock rebuild). Plan updated with Stage 4 progress and risks. Ready to proceed to perf delta capture and WPF host scaffolding planning.
+Implemented Step 5 host scaffold upgrades and perf instrumentation:
 
+Completed technical changes:
+
+Added WpfList surface enum entry (Core FrameworkSurfaceKind) and WPF ListBox realization tracker (WpfListPerfTracker) wiring first‑N PERF lines.
+Integrated lifecycle logging in MauiBootstrapper (HOST[Lifecycle:*]) with forced window creation attempt & handle acquisition helpers.
+Added deterministic perf session start for WPF list; emits PERF[SurfaceRealizationStart:*] and subsequent realization lines.
+Updated MainWindow to start perf tracker and use EnsureWindowHandleAsync for MAUI window (embedding path in place; current session log shows MAUI assembly load failure).
+Added CompositeLogSink + FileLogSink usage in WPF host (already present, now leveraged).
+Added project file transformations (WPF host csproj) to suppress failing PRI/WindowsAppSDK tasks, then downgraded to net8.0 for successful build, finally returned to net10.0 after evaluating; final stable build achieved on net10.0 with WindowsAppSDK & BuildTools removed and defensive property disables.
+Run host: session-log captured WpfList metrics start (session=1 target=50) with first realization line (legacy path due to current WpfListPerfTracker falling back to RecordRealized legacy identity—acceptable for initial readiness; can extend to containerId later).
+SurfacePerfAggregator already producing percentile summaries (not yet emitted for WpfList due to not reaching target 50 within captured log excerpt—further scrolling/run needed).
+Outstanding / next (not yet marked complete):
+
+MAUI assembly load failure: reflection lookup failed (assembly name with space). Need either copy to output or adjust bootstrapper to load “Xaml Demo.dll” from WPF bin directory (Add File.Exists check + Assembly.LoadFrom). Not addressed in this step per scope; handle remains zero.
+Validation pass metrics collection for full first-N window (complete run until summary emission) and second run for stability.
+Documentation updates (Plan - Abstraction Prototype.md Step 5 finalization, ChangeLog entry, risk table) still pending.
+Embedding verification blocked by MAUI load failure (requires assembly resolution tweak).
+Checklist status updated accordingly; core code infrastructure for Step 5 completion path now in place.
 
 # Plan
 
@@ -441,3 +458,45 @@ Next Actions:
 1. Perform second cold run to confirm MauiCollection average remains < 550 ms and WinUI within ±5% of prior average.
 2. Append comparative delta table & narrative to ChangeLog (2025-09-24 section).
 3. Mark perf validation checklist items complete; proceed to readiness classification documentation & commit.
+
+---
+
+## Step 5 (WPF Host Scaffold – Partial Implementation Accepted)
+
+Decision: Proceed with documentation of partial scaffold; defer full WindowsAppSDK integration (PRI task failure) and embedded MAUI window handle realization. Reflection-based bootstrap retained; direct MAUI reference postponed to later stabilization.
+
+### Implemented (Step 5 Partial)
+- New project `Xaml.Demo.Host.Wpf` (net10.0-windows; pure WPF, no WinAppSDK packaging).
+- Reflection `MauiBootstrapper` (loads MAUI assembly, acquires Services, attempts HWND).
+- `MauiHwndHost` (HWND re-parent host).
+- `WpfTextBoxLogSink` + LogRouter hookup in MainWindow.
+- MainWindow layout: (Column0 placeholder for MAUI window, Column1 WPF ListBox bound to Core `MultiVisualPerfViewModel.Items`, bottom log console).
+- VM instantiation (1000 color items) independent of MAUI host success.
+- Basic selection + color swap commands wired (Toggle Select All, Swap Colors).
+
+### Deferred / Remaining
+- Successful HWND acquisition & embed (handle currently may remain zero under reflection path).
+- Full lifecycle logging (HostConstructed → MauiBootstrapping → MauiReady → Embedded).
+- Surface catalog extension for WPF host scenario (placeholder only, no additional surfaces).
+- Validation metrics (compare WPF list virtualization vs MAUI/WinUI surfaces).
+- Risk table update (focus routing, DPI scaling, cleanup ordering) – pending.
+- MAUI window forced creation path (explicit Window instantiation if none opened).
+
+### Constraints / Issues
+- WindowsAppSDK PRI generation task (ExpandPriContent) error when attempting WinAppSDK package reference; removed for now.
+- Build kept independent of Win2D / WinAppSDK tasks to avoid packaging overhead.
+- No PlatformTarget mismatch (explicit x64 to be added later if Win2D integration required).
+
+### Rationale
+Capturing the partial scaffold clarifies abstraction seam and enables parallel planning of:
+1. Direct MAUI embedding vs reflection bootstrap.
+2. Future external process swapchain integration.
+3. Catalog-driven multi-surface host in WPF.
+
+### Next Increment Options
+- Add minimal lifecycle logging + risk table, then mark Step 5 complete.
+- Introduce forced MAUI Window creation to guarantee HWND for embedding test.
+- Add simple allocation / timing probes for WPF ListBox first-N item materialization.
+
+### Success Criteria (Adjusted)
+Partial acceptance: structural host + VM + logging sink present. Full success postponed until HWND embed validated and lifecycle metrics captured.

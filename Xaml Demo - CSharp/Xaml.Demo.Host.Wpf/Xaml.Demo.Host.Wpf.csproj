@@ -1,0 +1,68 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Xaml.Demo.Core\Xaml.Demo.Core.csproj" />
+  </ItemGroup>
+
+  <Target Name="CopyMauiAssembly" AfterTargets="Build">
+    <PropertyGroup>
+      <_MauiWinAssemblyPath>..\Xaml Demo\bin\$(Configuration)\net10.0-windows10.0.19041.0\win-x64\Xaml Demo.dll</_MauiWinAssemblyPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_MauiAssembly Include="$(_MauiWinAssemblyPath)" Condition="Exists('$(_MauiWinAssemblyPath)')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_MauiAssembly)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_MauiAssembly)' != ''" />
+  </Target>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>Xaml.Demo.Host.Wpf</AssemblyName>
+    <RootNamespace>Xaml.Demo.Host.Wpf</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+    <EnableMsixTooling>false</EnableMsixTooling>
+  </PropertyGroup>
+
+  <!-- Removed Windows SDK BuildTools to avoid transitive PRI / MrtCore tasks (ExpandPriContent failure under preview SDK).
+       Re-introduce later only if specific winmd generation or headers are required. -->
+  <ItemGroup>
+  </ItemGroup>
+
+  <!-- Suppress Windows App SDK PRI generation / Win2D AnyCPU warning for this pure WPF host.
+       Step 5 allows deferring AppX / PRI; we override related properties & target. -->
+  <PropertyGroup>
+    <EnableMrtCorePriGeneration>false</EnableMrtCorePriGeneration>
+    <EnableWindowsAppSdkPriGen>false</EnableWindowsAppSdkPriGen>
+    <SkipWinAppSdkPriGeneration>true</SkipWinAppSdkPriGeneration>
+    <Win2DWarnNoPlatform>true</Win2DWarnNoPlatform>
+  </PropertyGroup>
+
+  <!-- Additional suppression of PRI / AppX related processing -->
+  <PropertyGroup>
+    <EnablePriGeneration>false</EnablePriGeneration>
+    <EnableDefaultPriFile>false</EnableDefaultPriFile>
+    <EnableProjectPriFileGeneration>false</EnableProjectPriFileGeneration>
+    <DisableAppxProjectPriGeneration>true</DisableAppxProjectPriGeneration>
+    <EnableMonacoPriGeneration>false</EnableMonacoPriGeneration>
+  </PropertyGroup>
+
+  <!-- No-op override for ExpandPriContent (avoid WindowsAppSDK PRI task load);
+       Removed CodeTaskFactory stub (not supported on .NET Core MSBuild). -->
+  <Target Name="ExpandPriContent">
+    <Message Text="ExpandPriContent no-op: PRI generation disabled for WPF host scaffold." Importance="Low" />
+  </Target>
+
+  <!-- Hard disable any Windows App SDK target imports that may still flow transitively (defensive). -->
+  <PropertyGroup>
+    <EnableWindowsAppSdk>false</EnableWindowsAppSdk>
+    <IncludeWindowsAppSdkTargets>false</IncludeWindowsAppSdkTargets>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <DisableAppxProjectPriGeneration>true</DisableAppxProjectPriGeneration>
+    <DisableMsixProjectPriGeneration>true</DisableMsixProjectPriGeneration>
+  </PropertyGroup>
+
+</Project>

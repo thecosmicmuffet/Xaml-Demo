@@ -8,6 +8,7 @@ namespace Xaml_Demo.Surfaces
     {
         MauiCollection,
         WinUIListView,
-        UwpPlaceholder
+        UwpPlaceholder,
+        WpfList // WPF host in-process ListBox surface (Step5 instrumentation)
     }
 }

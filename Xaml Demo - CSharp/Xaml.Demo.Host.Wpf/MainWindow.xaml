@@ -1,0 +1,84 @@
+﻿<Window x:Class="Xaml.Demo.Host.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="XAML Demo WPF Host" Width="1400" Height="900">
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="140" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Column 0: MAUI embedded window host (added at runtime if HWND acquired) -->
+        <Border Grid.Row="0" Grid.Column="0" BorderBrush="#444" BorderThickness="1" Background="#111">
+            <Grid x:Name="MauiHostPlaceholder">
+                <TextBlock x:Name="MauiStatusText"
+                           Foreground="#bbb"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Text="MAUI surface initializing..." />
+            </Grid>
+        </Border>
+
+        <!-- Column 1: WPF placeholder list bound to Core MultiVisualPerfViewModel.Items -->
+        <Border Grid.Row="0" Grid.Column="1" BorderBrush="#444" BorderThickness="1" Background="#181818" Padding="4">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0 0 0 4">
+                    <Button Content="Toggle Select All"
+                            Padding="8,4"
+                            Margin="0,0,8,0"
+                            Click="OnToggleSelectAll"/>
+                    <Button Content="Swap Colors"
+                            Padding="8,4"
+                            Margin="0,0,8,0"
+                            Click="OnSwapColors"/>
+                    <TextBlock Text="{Binding SelectedCount, StringFormat=Selected: {0}}"
+                               VerticalAlignment="Center"
+                               Foreground="#ccc"/>
+                </StackPanel>
+                <ListBox ItemsSource="{Binding Items}"
+                         x:Name="WpfList"
+                         Background="#202020"
+                         BorderBrush="#333"
+                         BorderThickness="1"
+                         ScrollViewer.CanContentScroll="True">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="4" Margin="2"
+                                    Background="{Binding ColorString}"
+                                    ToolTip="{Binding ColorString}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Rectangle Width="24" Height="24">
+                                        <Rectangle.Fill>
+                                            <SolidColorBrush Color="{Binding Color}"/>
+                                        </Rectangle.Fill>
+                                    </Rectangle>
+                                    <TextBlock Text="{Binding ColorString}" Foreground="#ddd" FontFamily="Consolas"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Row 1: Log console -->
+        <Border Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="#444" BorderThickness="1" Background="#0C0C0C" Padding="4">
+            <TextBox x:Name="LogBox"
+                     Background="#0C0C0C"
+                     Foreground="#c8c8c8"
+                     FontFamily="Consolas"
+                     FontSize="12"
+                     IsReadOnly="True"
+                     TextWrapping="NoWrap"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"/>
+        </Border>
+    </Grid>
+</Window>
