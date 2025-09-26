@@ -19,7 +19,13 @@ public sealed class PerfItemViewModel : BaseViewModel, ISelectable
     public Color Color
     {
         get => _color;
-        set => SetProperty(ref _color, value);
+        set
+        {
+            if (SetProperty(ref _color, value))
+            {
+                OnPropertyChanged(nameof(ColorString));
+            }
+        }
     }
 
     public string ColorString

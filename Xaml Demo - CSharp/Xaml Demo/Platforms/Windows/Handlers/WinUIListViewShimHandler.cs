@@ -14,7 +14,8 @@ public class WinUIListViewShimHandler : ViewHandler<WinUIListViewShim, WinUIList
     public static readonly IPropertyMapper<WinUIListViewShim, WinUIListViewShimHandler> Mapper =
         new PropertyMapper<WinUIListViewShim, WinUIListViewShimHandler>(ViewHandler.ViewMapper)
         {
-            [nameof(WinUIListViewShim.ItemsSource)] = MapItemsSource
+            [nameof(WinUIListViewShim.ItemsSource)] = MapItemsSource,
+            [nameof(WinUIListViewShim.ItemTemplate)] = MapItemTemplate
         };
 
     public WinUIListViewShimHandler() : base(Mapper)
@@ -42,5 +43,21 @@ public class WinUIListViewShimHandler : ViewHandler<WinUIListViewShim, WinUIList
     }
 
     public void UpdateItemsSource() => MapItemsSource(this, VirtualView);
+
+    public static void MapItemTemplate(WinUIListViewShimHandler handler, WinUIListViewShim view)
+    {
+        if (handler.PlatformView is WinUIListView listView)
+        {
+            if (view.ItemTemplate != null)
+            {
+                // convert maui DataTemplate to winui DataTemplate
+                //listView.ItemTemplate = view.ItemTemplate.ToPlatform();
+            }
+            else
+            {
+                listView.ClearValue(WinUIListView.ItemTemplateProperty);
+            }
+        }
+    }
 }
 #endif

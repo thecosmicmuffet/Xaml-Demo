@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+  x:Class="Xaml_Demo.Controls.ColorRgbEditor"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  xmlns:conv="clr-namespace:Xaml_Demo.Converters"
+  x:Name="Root"
+  Padding="4">
+  <ContentView.Resources>
+    <Style TargetType="Slider">
+      <Setter Property="HorizontalOptions"
+              Value="Fill"/>
+      <Setter Property="HeightRequest"
+              Value="40"/>
+      <Setter Property="ThumbColor"
+              Value="LightGray"/>
+      <Setter Property="MinimumTrackColor"
+              Value="Gray"/>
+      <Setter Property="MaximumTrackColor"
+              Value="DarkGray"/>
+      <Setter Property="Minimum"
+              Value="0"/>
+      <Setter Property="Maximum"
+              Value="255"/>
+      <Setter Property="Grid.Column"
+              Value="1"/>
+    </Style>
+
+    <conv:ColorComponentConverter x:Key="ColorComp"/>
+  </ContentView.Resources>
+
+  <VerticalStackLayout Spacing="4">
+    <Grid ColumnDefinitions="Auto,*"
+          ColumnSpacing="6"
+          RowDefinitions="Auto,Auto,Auto">
+      <BoxView CornerRadius="4"
+               Grid.RowSpan="3"
+               Color="{Binding TargetColor, Source={x:Reference Root}}"/>
+      <Label Text="R"
+             VerticalTextAlignment="Center"
+             WidthRequest="18"/>
+      <Slider x:Name="RedSlider"
+              Value="{Binding TargetColor, Source={x:Reference Root}, Mode=TwoWay, Converter={StaticResource ColorComp}, ConverterParameter=Red}"
+              ValueChanged="OnRgbChanged"/>
+
+      <Label Text="G"
+             Grid.Row="1"
+             VerticalTextAlignment="Center"
+             WidthRequest="18"/>
+      <Slider x:Name="GreenSlider"
+              Grid.Row="1"
+              Value="{Binding TargetColor, Source={x:Reference Root}, Mode=TwoWay, Converter={StaticResource ColorComp}, ConverterParameter=Green}"
+              ValueChanged="OnRgbChanged"/>
+
+      <Label Text="B"
+             Grid.Row="2"
+             VerticalTextAlignment="Center"
+             WidthRequest="18"/>
+      <Slider x:Name="BlueSlider"
+              Grid.Row="2"
+              Value="{Binding TargetColor, Source={x:Reference Root}, Mode=TwoWay, Converter={StaticResource ColorComp}, ConverterParameter=Blue}"
+              ValueChanged="OnRgbChanged"/>
+    </Grid>
+
+    <HorizontalStackLayout Spacing="6"
+                           VerticalOptions="Center">
+      <Label FontSize="10"
+             Text="{Binding TargetColor, Source={x:Reference Root}, Converter={StaticResource ColorComp}, ConverterParameter=Hue, StringFormat='Hue {0:F0}°'}"/>
+      <Label FontSize="10"
+             Text="{Binding TargetColor, Source={x:Reference Root}, Converter={StaticResource ColorComp}, ConverterParameter=Saturation, StringFormat='Saturation {0:P0}'}"/>
+      <Label FontSize="10"
+             Text="{Binding TargetColor, Source={x:Reference Root}, Converter={StaticResource ColorComp}, ConverterParameter=Value, StringFormat='Value {0:P0}'}"/>
+    </HorizontalStackLayout>
+  </VerticalStackLayout>
+</ContentView>

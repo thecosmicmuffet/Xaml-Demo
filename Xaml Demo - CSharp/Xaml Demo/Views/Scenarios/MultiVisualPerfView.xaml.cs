@@ -32,6 +32,7 @@ public partial class MultiVisualPerfView : ContentView
             vm.PropertyChanged -= OnViewModelPropertyChanged;
             vm.PropertyChanged += OnViewModelPropertyChanged;
             EnsureSurfaces(vm);
+            OnToggleColumns(null, null);
         }
     }
 
@@ -46,11 +47,13 @@ public partial class MultiVisualPerfView : ContentView
                 case FrameworkSurfaceKind.MauiCollection:
                     if (ItemsCollectionView != null)
                         _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.MauiCollection, ItemsCollectionView));
+                    else if(RightListView != null)
+                        _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.MauiCollection, RightListView));
                     break;
-                case FrameworkSurfaceKind.WinUIListView:
+                /* case FrameworkSurfaceKind.WinUIListView:
                     if (RightListShim != null)
                         _surfaces.Add(new ExistingMauiViewSurface(FrameworkSurfaceKind.WinUIListView, RightListShim));
-                    break;
+                    break; */
                 case FrameworkSurfaceKind.UwpPlaceholder:
                     // Placeholder for future UWP / out-of-process surface.
                     break;
@@ -278,138 +281,12 @@ public partial class MultiVisualPerfView : ContentView
         var currentState = groups[0].CurrentState?.Name ?? "Normal";
         return currentState == "Selectable" || currentState == "SelectableByProperty";
     }
-    /*
-    // Pan gesture over transparent overlay to perform lasso selection.
-    private void OnLassoPan(object? sender, PanUpdatedEventArgs e)
+
+    private void OnToggleColumns(object? sender, EventArgs e)
     {
-        if (BindingContext is not MultiVisualPerfViewModel vm) return;
-        if (!IsInSelectableState()) return;
-
-        switch (e.StatusType)
-        {
-            case GestureStatus.Started:
-                _lassoStart = new Point(e.TotalX, e.TotalY);
-                ShowLasso(0, 0, 0, 0);
-                break;
-
-            case GestureStatus.Running:
-                if (_lassoStart is Point start)
-                {
-                    double curX = start.X + e.TotalX;
-                    double curY = start.Y + e.TotalY;
-                    double x = Math.Min(start.X, curX);
-                    double y = Math.Min(start.Y, curY);
-                    double w = Math.Abs(curX - start.X);
-                    double h = Math.Abs(curY - start.Y);
-                    ShowLasso(x, y, w, h);
-                }
-                break;
-
-            case GestureStatus.Canceled:
-            case GestureStatus.Completed:
-                if (_lassoStart is Point s && LassoRect != null && LassoRect.IsVisible)
-                {
-                    var rect = CurrentLassoRect();
-                    ApplyLassoSelection(vm, rect);
-                }
-                HideLasso();
-                _lassoStart = null;
-                break;
-        }
+        if (RightColumn == null || LeftColumn == null)
+            return;
+        bool isRightVisible = RightColumn.IsVisible;
+        VisualStateManager.GoToState(this, isRightVisible ? "LeftOnly" : "Both");
     }
-     
-    private void ShowLasso(double x, double y, double w, double h)
-        {
-            if (LassoRect == null) return;
-            if (!LassoRect.IsVisible) LassoRect.IsVisible = true;
-
-            // Position via Translation to avoid affecting layout.
-            LassoRect.TranslationX = x;
-            LassoRect.TranslationY = y;
-            LassoRect.WidthRequest = w;
-            LassoRect.HeightRequest = h;
-        }
-
-        private Rect CurrentLassoRect()
-        {
-            if (LassoRect == null || !LassoRect.IsVisible)
-                return Rect.Zero;
-            return new Rect(LassoRect.TranslationX, LassoRect.TranslationY, LassoRect.Width, LassoRect.Height);
-        }
-
-        private void HideLasso()
-        {
-            if (LassoRect != null)
-            {
-                LassoRect.IsVisible = false;
-                LassoRect.WidthRequest = -1;
-                LassoRect.HeightRequest = -1;
-            }
-        } 
-
-        private void ApplyLassoSelection(MultiVisualPerfViewModel vm, Rect lasso)
-        {
-            if (lasso.Width <= 2 || lasso.Height <= 2)
-            {
-                // Treat tiny drags as clicks; nothing extra here.
-                return;
-            }
-
-            if (ItemsCollectionView == null) return;
-
-            // Attempt to get realized item views. In MAUI, CollectionView exposes VisibleViews.
-            var visibleViewsProp = ItemsCollectionView.GetType().GetProperty("VisibleViews");
-            var visible = visibleViewsProp?.GetValue(ItemsCollectionView) as IEnumerable<View>;
-            if (visible == null)
-            {
-                LogHub.Write("Lasso: no VisibleViews; skipping.");
-                return;
-            }
-
-            var inside = new List<PerfItemViewModel>();
-
-            foreach (var view in visible)
-            {
-                if (view?.BindingContext is not PerfItemViewModel item) continue;
-
-                // Approximate bounds: use view.Bounds (relative to internal layout). Assume internal layout origin aligned.
-                var b = view.Bounds;
-
-                // Inflate a little if zero-sized during layout transitions
-                if (b.Width <= 0 || b.Height <= 0)
-                    continue;
-
-                if (RectsIntersect(lasso, b))
-                    inside.Add(item);
-            }
-
-            if (inside.Count == 0)
-            {
-                LogHub.Write("Lasso: no items inside.");
-                return;
-            }
-
-            // Decide add or remove: if every item is already selected, deselect; else add missing ones.
-            int already = inside.Count(i => vm.SelectedItems.Contains(i));
-            if (already == inside.Count)
-            {
-                vm.ApplySelection(inside, false);
-                LogHub.Write($"Lasso: removed {inside.Count} items; Selected={vm.SelectedCount}");
-            }
-            else
-            {
-                var toAdd = inside.Where(i => !vm.SelectedItems.Contains(i)).ToList();
-                if (toAdd.Count > 0)
-                {
-                    vm.ApplySelection(toAdd, true);
-                    LogHub.Write($"Lasso: added {toAdd.Count} items; Selected={vm.SelectedCount}");
-                }
-            }
-
-            ForceSelectorRefreshIfNeeded();
-        }
-
-        private static bool RectsIntersect(Rect a, Rect b)
-            => a.Right >= b.Left && a.Left <= b.Right && a.Bottom >= b.Top && a.Top <= b.Bottom;
-    */
 }

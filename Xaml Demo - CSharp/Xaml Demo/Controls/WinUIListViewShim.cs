@@ -1,5 +1,6 @@
 using System.Collections;
 using Microsoft.Maui;
+using Microsoft.Maui.Controls;
 
 namespace Xaml_Demo.Controls;
 
@@ -30,6 +31,28 @@ public class WinUIListViewShim : View
         if (bindable is WinUIListViewShim shim)
         {
             shim.Handler?.UpdateValue(nameof(ItemsSource));
+        }
+    }
+
+    public static readonly BindableProperty ItemTemplateProperty =
+        BindableProperty.Create(
+            nameof(ItemTemplate),
+            typeof(DataTemplate),
+            typeof(WinUIListViewShim),
+            default(DataTemplate),
+            propertyChanged: OnItemTemplateChanged);
+
+    public DataTemplate? ItemTemplate
+    {
+        get => (DataTemplate?)GetValue(ItemTemplateProperty);
+        set => SetValue(ItemTemplateProperty, value);
+    }
+
+    private static void OnItemTemplateChanged(BindableObject bindable, object? oldValue, object? newValue)
+    {
+        if (bindable is WinUIListViewShim shim)
+        {
+            shim.Handler?.UpdateValue(nameof(ItemTemplate));
         }
     }
 }

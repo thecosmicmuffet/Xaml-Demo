@@ -1,17 +1,26 @@
 # Status
 ACTIVE
-Implementation iteration (SelectableByProperty state + converter-based template swapping)
+Implementation iteration (token expansion or collapse across twoway binding combining multiple controls and conversion)
 
 ## Previous Step Summary
-Initial plan stub only; no prior implementation steps documented.
 
-## Current Iteration (2025-09-17)
-Implemented a new visual state `SelectableByProperty` in `MultiVisualPerfView` that demonstrates selection-driven template swapping via:
-- A boolean-binding (`PerfItemViewModel.Selected`)
-- A custom converter (`SelectionToTemplateConverter`)
-- A dynamic template host control (`TemplateHost`) to realize the bound `DataTemplate`
+Implemented color token expansion in RightColumn:
 
-This offers a contrast with the existing `Selectable` state which uses a `DataTemplateSelector` coupled to collection-level selection membership (`MultiVisualPerfViewModel.SelectedItems` + `SelectionVersion` refresh triggers).
+- Added ItemTemplate support to WinUIListViewShim.
+- Added ColorComponentConverter (RGB + HSV extraction).
+- Added ColorRgbEditor (XAML + code-behind) with three sliders updating composite Color.
+- Updated PerfItemViewModel to raise ColorString change notifications.
+- Added PerfItemColorEditorTemplate and applied as ItemTemplate of RightListShim.
+- Build succeeded (warnings only; no functional errors).
+- Plan - Xaml Demonstration.md updated with new section documenting abstraction demo.
+
+Notes:
+
+- Warnings include duplicate type (Core vs local) and nullable signature mismatches (pre-existing).
+- Potential optimization: throttle rapid slider updates / enable compiled bindings flag if desired.
+
+Color editing now demonstrates multi-binding decomposition of a single model property via reusable enum-driven converter and custom control without altering ViewModel contract.
+
 
 ### Added Artifacts
 - `Converters/SelectionToTemplateConverter.cs`
@@ -78,3 +87,34 @@ See `ChangeLog.md` for chronological entries.
 - Documentation updated (PLAN + CHANGELOG) (PARTIALLY DONE – ChangeLog initial entry queued)
 - Build succeeds on all target frameworks
 - Follow-up metrics step scheduled
+
+## Update 2025-09-25: Color Token Expansion Demo
+Implemented a reusable multi-slider color editor hosted in the Right (WinUIListViewShim) surface to demonstrate expanding a single Color token into multiple scalar bindings while preserving MVVM integrity.
+
+### Added Artifacts (This Update)
+- Controls/ColorRgbEditor.xaml (+ .xaml.cs): 3 horizontal sliders (R,G,B) bound (OneWay) via enum-driven converter + two-way composite Color update in code-behind (TargetColor BindableProperty).
+- Converters/ColorComponentConverter.cs: Extracts RGB (0–255) or HSV (Hue 0–360, S & V 0–1) components from a Color using a ColorComponent enum.
+- WinUIListViewShim: New BindableProperty ItemTemplate enabling per-item template injection (educational surface abstraction).
+- MultiVisualPerfView.xaml: DataTemplate PerfItemColorEditorTemplate applied to RightListShim (editor per item).
+
+### Educational Rationale
+1. Layered Abstraction: Shows how a surface (WinUI shim) can project a different interaction model (editing) than the primary surface (selection/perf focus) without ViewModel changes.
+2. Token Decomposition: Single Color property becomes three adjustable channel sliders (and derived Hue readout) – illustrates fan-out of one model property into multiple view interactions.
+3. Converter Reuse: Same converter handles RGB & HSV exposing both discrete channel editing (RGB) and diagnostic dimension (Hue) with zero additional VM API.
+4. Two-Way Integrity: Only one composite update path (OnRgbChanged) writes back; avoids multi-binding race conditions, keeps PerfItemViewModel API unchanged.
+5. Extensibility Path: Enum pattern allows later swapping sliders to Hue/Saturation/Value simply by changing ConverterParameter values or providing an alternative editor template (no VM edits).
+
+### Potential Next Steps
+- Add alternate template (HSV sliders) selected via visual state or toggle.
+- Introduce IColorDecompositionStrategy for pluggable component sets (RGB vs HSV vs HSL).
+- Instrument slider interaction latency (compare handler update vs direct binding ConvertBack approach).
+
+### Risks / Considerations
+| Concern | Note |
+|---------|------|
+| Duplicate VM types (Core vs local) warnings | Existing structural refactor WIP; unaffected by this demo |
+| Color change frequency | Potential high churn; may consider throttling in OnRgbChanged |
+| XamlC binding Source warnings | Optional perf optimization flag; non-blocking for demo |
+
+### Logging / Metrics
+No additional timers added; future enhancement could log color edit latency & allocation deltas.
