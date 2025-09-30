@@ -1,15 +1,84 @@
-# Session Log (2025-09-25T11:08:03.0233184-07:00)
+# Session Log (2025-09-26T17:48:12.1109288-07:00)
 [WPFHost] LogRouter sink initialized (UI + file).
 [WPFHost] MainWindow Loaded: starting bootstrap sequence.
 [WPFHost] ViewModel created. Items=1000
-[11:08:03] PERF[SurfaceRealizationStart:WpfList]: session=1 target=50
-[11:08:03] PERF[SurfaceRealization:WpfList:1]: 13.54 ms src=Legacy
-[11:08:03] HOST[Lifecycle:MauiBootstrapperStart]: msg=InitializingReflection
-[11:08:03] HOST[Lifecycle:MauiBootstrapperException]: Could not load file or assembly 'Xaml Demo, Culture=neutral, PublicKeyToken=null'. The system cannot find the file specified.
-[11:08:03] HOST[Lifecycle:MauiForceWindowSkip]: reason=NoServices
-[11:08:05] HOST[Lifecycle:MauiHandleResult]: hwnd=0
+[17:48:12] PERF[SurfaceRealizationStart:WpfList]: session=1 target=50
+[17:48:12] PERF[SurfaceRealization:WpfList:1]: 11.95 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:2]: 23.39 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:3]: 25.67 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:4]: 27.68 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:5]: 32.45 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:6]: 33.96 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:7]: 36.01 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:8]: 37.72 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:9]: 39.17 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:10]: 40.57 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:11]: 42.16 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:12]: 44.17 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:13]: 46.68 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:14]: 48.43 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:15]: 50.42 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:16]: 52.03 ms src=WpfList
+[17:48:12] PERF[SurfaceRealization:WpfList:17]: 53.65 ms src=WpfList
+[17:48:12] HOST[Lifecycle:MauiBootstrapperStart]: msg=InitializingReflection
+[17:48:12] HOST[Lifecycle:WinAppRuntimeBootstrapLoadWarn]: file=Microsoft.WindowsAppRuntime.Bootstrap.dll msg=Bad IL format. The format of the file 'E:\CodProj\Xaml Demo\Xaml Demo - CSharp\Xaml.Demo.Host.Wpf\bin\Debug\net10.0-windows10.0.19041.0\Microsoft.WindowsAppRuntime.Bootstrap.dll' is invalid.
+[17:48:12] HOST[Lifecycle:WinAppRuntimeBootstrap]: strategy=Native status=Success version=0x00010008
+[17:48:12] HOST[Lifecycle:MauiAssemblyResolveHookInstalled]
+[17:48:12] HOST[Lifecycle:MauiFirstChanceHookInstalled]
+[17:48:12] HOST[Lifecycle:MauiAssemblyResolveAttempt]: strategy=AssemblyLoad name='Xaml Demo'
+[17:48:12] HOST[Lifecycle:MauiAssemblyResolve]: name=Xaml Demo
+[17:48:12] HOST[Lifecycle:MauiAssemblyResolveHit]: strategy=LoadFrom path=E:\CodProj\Xaml Demo\Xaml Demo - CSharp\Xaml.Demo.Host.Wpf\bin\Debug\net10.0-windows10.0.19041.0\Xaml Demo.dll
+[17:48:12] HOST[Lifecycle:MauiBootstrapping]: phase=CreateMauiApp reflection
+[17:48:15] HOST[Diag:FirstChanceTypeInit]: type=System.TypeInitializationException msg=The type initializer for 'Microsoft.Maui.Handlers.ViewHandler' threw an exception.
+[17:48:15] HOST[Diag:FirstChanceTypeInitInner]: inner=System.Runtime.InteropServices.COMException msg=
+[17:48:15] HOST[Diag:FirstChanceTypeInit]: type=System.TypeInitializationException msg=The type initializer for 'Microsoft.Maui.Controls.Element' threw an exception.
+[17:48:15] HOST[Diag:FirstChanceTypeInitInner]: inner=System.TypeInitializationException msg=The type initializer for 'Microsoft.Maui.Handlers.ViewHandler' threw an exception.
+[17:48:15] HOST[Diag:FirstChanceTypeInit]: type=System.TypeInitializationException msg=The type initializer for 'Microsoft.Maui.Controls.Element' threw an exception.
+[17:48:15] HOST[Diag:FirstChanceTypeInitInner]: inner=System.TypeInitializationException msg=The type initializer for 'Microsoft.Maui.Handlers.ViewHandler' threw an exception.
+[17:48:15] HOST[Lifecycle:MauiCreateInvokeError]: outer=TargetInvocationException msg=Exception has been thrown by the target of an invocation.
+[17:48:15] HOST[Lifecycle:MauiCreateInner]: type=System.TypeInitializationException msg=The type initializer for 'Microsoft.Maui.Controls.Element' threw an exception. stack=   at Microsoft.Maui.Controls.Element.RemapIfNeeded()
+   at Microsoft.Maui.Controls.Hosting.AppHostBuilderExtensions.RemapForControls(MauiAppBuilder builder)
+   at Microsoft.Maui.Controls.Hosting.AppHostBuilderExtensions.SetupDefaults(MauiAppBuilder builder)
+   at Microsoft.Maui.Controls.Hosting.AppHostBuilderExtensions.UseMauiPrimaryApp[TApp](MauiAppBuilder builder)
+   at Microsoft.Maui.Controls.Hosting.AppHostBuilderExtensions.UseMauiApp[TApp](MauiAppBuilder builder)
+   at Xaml_Demo.MauiProgram.CreateMauiApp()
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[17:48:15] HOST[Lifecycle:MauiForceWindowSkip]: reason=NoServices
+[17:48:15] PERF[SurfaceRealization:WpfList:18]: 3,225.20 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:19]: 3,234.22 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:20]: 3,245.56 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:21]: 3,247.17 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:22]: 3,248.68 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:23]: 3,250.17 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:24]: 3,255.86 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:25]: 3,276.29 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:26]: 3,287.57 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:27]: 3,289.04 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:28]: 3,290.15 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:29]: 3,292.02 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:30]: 3,299.70 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:31]: 3,312.10 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:32]: 3,324.48 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:33]: 3,335.26 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:34]: 3,337.23 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:35]: 3,338.47 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:36]: 3,346.23 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:37]: 3,349.63 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:38]: 3,361.65 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:39]: 3,363.59 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:40]: 3,365.03 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:41]: 3,366.46 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:42]: 3,372.33 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:43]: 3,376.50 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:44]: 3,388.24 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:45]: 3,389.65 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:46]: 3,391.51 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:47]: 3,393.24 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:48]: 3,399.58 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:49]: 3,407.76 ms src=WpfList
+[17:48:15] PERF[SurfaceRealization:WpfList:50]: 3,423.30 ms src=WpfList
+[17:48:15] PERF[SurfaceRealizationSummary:WpfList]: phase=Readiness session=1 count=50 target=50 dup=0 tail=0 avg=2,208.60 ms min=11.95 ms p50=3,276.29 ms p90=3,389.65 ms p99=3,423.30 ms max=3,423.30 ms readiness=Ready
+[17:48:15] HOST[Lifecycle:WpfListPerfComplete]: count=50 target=50
+[17:48:17] HOST[Lifecycle:MauiHandleResult]: hwnd=0
 [WPFHost] MAUI handle not acquired; surface placeholder retained.
-[WPFHost] ToggleSelectAll invoked. Selected=1000
-[WPFHost] ToggleSelectAll invoked. Selected=0
-[WPFHost] SwapColors invoked. Changed=1000
-[WPFHost] SwapColors invoked. Changed=1000

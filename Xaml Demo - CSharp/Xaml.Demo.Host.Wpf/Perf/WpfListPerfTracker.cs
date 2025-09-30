@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Threading;
 using Xaml_Demo.Logging;
 using Xaml_Demo.Perf;
 using Xaml_Demo.Surfaces;
@@ -24,8 +27,9 @@ namespace Xaml.Demo.Host.Wpf.Perf
         private int _count;
         private bool _done;
         private bool _started;
+        private int _sessionId;
 
-        public WpfListPerfTracker(ListBox list, FrameworkSurfaceKind kind)
+        public WpfListPerfTracker(ListBox list, FrameworkSurfaceKind kind, bool autoRealize = true)
         {
             _list = list ?? throw new ArgumentNullException(nameof(list));
             _kind = kind;
@@ -34,12 +38,18 @@ namespace Xaml.Demo.Host.Wpf.Perf
             _list.ItemContainerGenerator.StatusChanged += OnStatusChanged;
             _list.LayoutUpdated += OnLayoutUpdated;
             _list.Unloaded += OnUnloaded;
+
+            if (autoRealize)
+            {
+                // Kick an async realization loop to drive virtualization to produce first N containers quickly.
+                _ = StartAutoRealizeAsync();
+            }
         }
 
         private void EnsureStarted()
         {
             if (_started) return;
-            SurfacePerfAggregator.Start(_kind, _target);
+            _sessionId = SurfacePerfAggregator.Start(_kind, _target);
             _sw.Start();
             _started = true;
         }
@@ -64,10 +74,8 @@ namespace Xaml.Demo.Host.Wpf.Perf
                     int id = RuntimeHelpers.GetHashCode(lbi);
                     if (_seen.Add(id))
                     {
+                        SurfacePerfAggregator.RecordRealized(_kind, id, _sessionId, "WpfList");
                         _count++;
-                        var elapsed = _sw.Elapsed.TotalMilliseconds;
-                        // Record with container identity (id) – include session for stale filtering.
-                        SurfacePerfAggregator.RecordRealized(_kind);
                         anyNew = true;
                         if (_count >= _target)
                         {
@@ -103,6 +111,42 @@ namespace Xaml.Demo.Host.Wpf.Perf
             _list.ItemContainerGenerator.StatusChanged -= OnStatusChanged;
             _list.LayoutUpdated -= OnLayoutUpdated;
             _list.Unloaded -= OnUnloaded;
+        }
+
+        private async Task StartAutoRealizeAsync()
+        {
+            // Allow initial layout to occur
+            await Task.Delay(50).ConfigureAwait(true);
+
+            // Use dispatcher to ensure we run on UI thread
+            var dispatcher = _list.Dispatcher;
+            if (dispatcher == null) return;
+
+            try
+            {
+                int lastRequested = -1;
+                while (!_done && _count < _target)
+                {
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        // Heuristic: request container near current count to trigger incremental virtualization materialization
+                        int nextIndex = Math.Min(_count + 3, _list.Items.Count - 1);
+                        if (nextIndex != lastRequested && nextIndex >= 0)
+                        {
+                            _list.ScrollIntoView(_list.Items[nextIndex]);
+                            lastRequested = nextIndex;
+                        }
+                    }, DispatcherPriority.Background);
+
+                    // Small delay to allow layout pass & generator status change
+                    await Task.Delay(25).ConfigureAwait(true);
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                LogRouter.Write("HOST[Lifecycle:WpfListAutoRealizeError]: " + ex.Message);
+            }
         }
     }
 }

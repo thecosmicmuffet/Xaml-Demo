@@ -2,16 +2,26 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Xaml.Demo.Core\Xaml.Demo.Core.csproj" />
+    <ProjectReference Include="..\Xaml Demo\Xaml Demo.csproj" />
   </ItemGroup>
 
   <Target Name="CopyMauiAssembly" AfterTargets="Build">
     <PropertyGroup>
-      <_MauiWinAssemblyPath>..\Xaml Demo\bin\$(Configuration)\net10.0-windows10.0.19041.0\win-x64\Xaml Demo.dll</_MauiWinAssemblyPath>
+      <!-- Revert: MAUI project back on net10.0 preview -->
+      <_MauiWinDir>..\Xaml Demo\bin\$(Configuration)\net10.0-windows10.0.19041.0\win-x64</_MauiWinDir>
+      <_MauiWinAssemblyPath>$(_MauiWinDir)\Xaml Demo.dll</_MauiWinAssemblyPath>
     </PropertyGroup>
     <ItemGroup>
       <_MauiAssembly Include="$(_MauiWinAssemblyPath)" Condition="Exists('$(_MauiWinAssemblyPath)')" />
+      <!-- Core MAUI framework & dependency assemblies needed for reflection activation -->
+      <_MauiDeps Include="$(_MauiWinDir)\Microsoft.Maui*.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.Maui.dll')" />
+      <_MauiDeps Include="$(_MauiWinDir)\Microsoft.Maui.Graphics.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.Maui.Graphics.dll')" />
+      <_MauiDeps Include="$(_MauiWinDir)\Microsoft.Extensions*.dll" />
+      <_MauiDeps Include="$(_MauiWinDir)\System.Reactive*.dll" Condition="Exists('$(_MauiWinDir)\System.Reactive.dll')" />
     </ItemGroup>
     <Copy SourceFiles="@(_MauiAssembly)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_MauiAssembly)' != ''" />
+    <Copy SourceFiles="@(_MauiDeps)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_MauiDeps)' != ''" />
+    <Message Text="Copied MAUI host + dependencies to WPF output (count=@(_MauiDeps->Count()))." Importance="Low" />
   </Target>
 
   <PropertyGroup>
@@ -25,7 +35,26 @@
     <PlatformTarget>x64</PlatformTarget>
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
     <EnableMsixTooling>false</EnableMsixTooling>
+    <!-- Removed DIRECT_MAUI_REF constant after reverting direct MAUI reference -->
   </PropertyGroup>
+
+  <!-- Hard block WinAppSDK PRI / packaging task loading (prevents ExpandPriContent MSB4062) -->
+  <PropertyGroup>
+    <EnableMrtCorePriGeneration>false</EnableMrtCorePriGeneration>
+    <EnableWindowsAppSdkPriGen>false</EnableWindowsAppSdkPriGen>
+    <SkipWinAppSdkPriGeneration>true</SkipWinAppSdkPriGeneration>
+    <DisableAppxProjectPriGeneration>true</DisableAppxProjectPriGeneration>
+    <DisableMsixProjectPriGeneration>true</DisableMsixProjectPriGeneration>
+    <EnablePriGeneration>false</EnablePriGeneration>
+    <EnablePackagingTargets>false</EnablePackagingTargets>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <DisableWinAppSdkTargets>true</DisableWinAppSdkTargets>
+  </PropertyGroup>
+
+  <!-- Early no-op to shadow any imported ExpandPriContent before WinAppSDK targets load -->
+  <Target Name="ExpandPriContent" BeforeTargets="PrepareForBuild">
+    <Message Text="(Early) ExpandPriContent suppressed." Importance="Low" />
+  </Target>
 
   <!-- Removed Windows SDK BuildTools to avoid transitive PRI / MrtCore tasks (ExpandPriContent failure under preview SDK).
        Re-introduce later only if specific winmd generation or headers are required. -->
@@ -63,6 +92,61 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <DisableAppxProjectPriGeneration>true</DisableAppxProjectPriGeneration>
     <DisableMsixProjectPriGeneration>true</DisableMsixProjectPriGeneration>
+    <!-- Additional aggressive suppression -->
+    <EnableAppxPackage>false</EnableAppxPackage>
+    <UseWinUI>false</UseWinUI>
+    <EnableWindowsAppSdkDeployment>false</EnableWindowsAppSdkDeployment>
   </PropertyGroup>
+
+  <!-- Strip build / buildTransitive assets (targets & props) from transitive packages if present -->
+  <ItemGroup>
+    <!-- Re-introduce Windows App SDK runtime assemblies ONLY (exclude build / pri / analyzers to avoid ExpandPriContent).
+         This provides Microsoft.WindowsAppSDK + Microsoft.UI.Xaml runtime bits needed for MAUI module initialization. -->
+    <!-- Revert: full WindowsAppSDK asset enable caused long restore + 'Cannot create a file' error at NuGet.targets(197,5). Limit to runtime assemblies only again. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001"
+                      ExcludeAssets="build;buildTransitive;contentFiles;analyzers"
+                      PrivateAssets="none" />
+    <!-- Keep Win2D fully excluded for now (not required for bootstrap) -->
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Guard to neutralize any lingering WinAppSDK targets if still imported -->
+  <Target Name="_NeutralizeWinAppSdkTargets" BeforeTargets="PrepareResources">
+    <PropertyGroup>
+      <EnableMrtCorePriGeneration>false</EnableMrtCorePriGeneration>
+    </PropertyGroup>
+    <Message Text="WinAppSDK build assets excluded (enforced)." Importance="Low" />
+  </Target>
+
+  <!-- Guard: redefine ExpandPriContent after all imports to ensure it stays a no-op -->
+  <Target Name="ExpandPriContent" AfterTargets="ResolveAssemblyReferences">
+    <Message Text="(Late) ExpandPriContent suppressed (post-import override)." Importance="Low" />
+  </Target>
+
+  <!-- Copy Windows App Runtime files from MAUI project's output (they should have them) -->
+  <Target Name="CopyWinAppRuntimeFromMaui" AfterTargets="Build">
+    <PropertyGroup>
+      <_MauiWinDir>..\Xaml Demo\bin\$(Configuration)\net10.0-windows10.0.19041.0\win-x64</_MauiWinDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- Copy Windows App Runtime DLLs from MAUI project output -->
+      <_WinAppRuntimeFiles Include="$(_MauiWinDir)\Microsoft.WindowsAppRuntime.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.WindowsAppRuntime.dll')" />
+      <_WinAppRuntimeFiles Include="$(_MauiWinDir)\Microsoft.UI.Xaml.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.UI.Xaml.dll')" />
+      <_WinAppRuntimeFiles Include="$(_MauiWinDir)\Microsoft.UI.Xaml.Controls.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.UI.Xaml.Controls.dll')" />
+      <_WinAppRuntimeFiles Include="$(_MauiWinDir)\Microsoft.UI.Xaml.Markup.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.UI.Xaml.Markup.dll')" />
+      <_WinAppRuntimeFiles Include="$(_MauiWinDir)\Microsoft.UI.Xaml.Phone.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.UI.Xaml.Phone.dll')" />
+      <_WinAppRuntimeFiles Include="$(_MauiWinDir)\resources.pri" Condition="Exists('$(_MauiWinDir)\resources.pri')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_WinAppRuntimeFiles)"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true"
+          Condition="'@(_WinAppRuntimeFiles)' != ''" />
+    <Message Text="Copied Windows App Runtime files from MAUI: @(_WinAppRuntimeFiles->'%(Filename)%(Extension)', ', ')." Importance="high" />
+    
+    <!-- Also check if we need to initialize the Windows App Runtime -->
+    <Message Text="Windows App Runtime files in output: " Importance="high" />
+    <Message Text="  Microsoft.WindowsAppRuntime.dll: $([System.IO.File]::Exists('$(OutDir)Microsoft.WindowsAppRuntime.dll'))" Importance="high" />
+    <Message Text="  Microsoft.UI.Xaml.dll: $([System.IO.File]::Exists('$(OutDir)Microsoft.UI.Xaml.dll'))" Importance="high" />
+  </Target>
 
 </Project>

@@ -21,6 +21,7 @@ namespace Xaml.Demo.Host.Wpf
         public MainWindow()
         {
             InitializeComponent();
+            LogRouter.Write("HOST[Lifecycle:HostConstructed]");
             Loaded += OnLoaded;
         }
 
@@ -38,17 +39,25 @@ namespace Xaml.Demo.Host.Wpf
             // Start WPF ListBox perf tracking (first-N realization metrics)
             _wpfPerfTracker = new WpfListPerfTracker(WpfList, FrameworkSurfaceKind.WpfList);
 
-            // Initialize MAUI (reflection bootstrap + deterministic handle acquisition)
-            await MauiBootstrapper.Instance.InitializeAsync();
-            var hwnd = await MauiBootstrapper.Instance.EnsureWindowHandleAsync();
-            if (hwnd != IntPtr.Zero)
+            // Try Hybrid WinUI 3 Window approach first
+            LogRouter.Write("[WPFHost] Attempting Hybrid WinUI 3 Window approach...");
+            bool hybridSuccess = await TryHybridWinUIApproach();
+            
+            if (!hybridSuccess)
             {
-                EmbedMaui(hwnd);
-            }
-            else
-            {
-                MauiStatusText.Text = "MAUI window handle unavailable (not realized yet).";
-                LogRouter.Write("[WPFHost] MAUI handle not acquired; surface placeholder retained.");
+                LogRouter.Write("[WPFHost] Hybrid approach failed, falling back to direct MAUI bootstrap");
+                // Fallback to direct MAUI initialization (reflection bootstrap + deterministic handle acquisition)
+                await MauiBootstrapper.Instance.InitializeAsync();
+                var hwnd = await MauiBootstrapper.Instance.EnsureWindowHandleAsync();
+                if (hwnd != IntPtr.Zero)
+                {
+                    EmbedMaui(hwnd);
+                }
+                else
+                {
+                    MauiStatusText.Text = "MAUI window handle unavailable (not realized yet).";
+                    LogRouter.Write("[WPFHost] MAUI handle not acquired; surface placeholder retained.");
+                }
             }
         }
 
@@ -80,11 +89,55 @@ namespace Xaml.Demo.Host.Wpf
                 MauiStatusText.Text = "MAUI surface embedded.";
                 _mauiEmbedded = true;
                 LogRouter.Write("[WPFHost] MAUI window embedded via HwndHost.");
+                LogRouter.Write("HOST[Lifecycle:Embedded]: hwnd=" + hwnd.ToString("X"));
             }
             catch (Exception ex)
             {
                 MauiStatusText.Text = "MAUI embed failed: " + ex.Message;
                 LogRouter.Write("[WPFHost] MAUI embed failed: " + ex.Message);
+                LogRouter.Write("HOST[Lifecycle:EmbedFail]: reason=" + ex.GetType().Name);
+            }
+        }
+
+        private async Task<bool> TryHybridWinUIApproach()
+        {
+            try
+            {
+                LogRouter.Write("[WPFHost] Initializing WinUI 3 window host...");
+                var winUIHost = WinUIWindowHost.Instance;
+                
+                // Initialize WinUI 3 window first
+                bool winUIInitialized = await winUIHost.InitializeAsync();
+                if (!winUIInitialized)
+                {
+                    LogRouter.Write("[WPFHost] Failed to initialize WinUI 3 window");
+                    return false;
+                }
+                
+                LogRouter.Write($"[WPFHost] WinUI 3 window initialized, handle: {winUIHost.WindowHandle:X}");
+                
+                // Now try to create MAUI content within the WinUI context
+                LogRouter.Write("[WPFHost] Attempting to create MAUI content in WinUI 3 context...");
+                var mauiResult = await winUIHost.CreateMauiContentAsync();
+                
+                if (mauiResult is IntPtr mauiHwnd && mauiHwnd != IntPtr.Zero)
+                {
+                    LogRouter.Write($"[WPFHost] Successfully got MAUI window handle from WinUI context: {mauiHwnd:X}");
+                    EmbedMaui(mauiHwnd);
+                    return true;
+                }
+                else
+                {
+                    LogRouter.Write("[WPFHost] Failed to create MAUI content in WinUI 3 context");
+                    MauiStatusText.Text = "MAUI initialization failed in WinUI 3 context";
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogRouter.Write($"[WPFHost] Hybrid WinUI approach error: {ex.GetType().Name}: {ex.Message}");
+                LogRouter.Write($"[WPFHost] Stack: {ex.StackTrace}");
+                return false;
             }
         }
 
