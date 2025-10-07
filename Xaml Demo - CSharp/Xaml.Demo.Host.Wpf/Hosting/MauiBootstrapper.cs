@@ -6,16 +6,13 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using Microsoft.Maui.Controls;
-using Microsoft.Extensions.DependencyInjection;
-using Xaml.Demo.Core.Logging;
-using Xaml_Demo;
+using Xaml_Demo.Logging;
 
 namespace Xaml.Demo.Host.Wpf.Hosting
 {
     /// <summary>
-    /// Direct MAUI bootstrap for the packaged WPF host.
-    /// Uses direct references to MAUI types now that we have package identity.
+    /// Reflection-based MAUI bootstrap for the packaged WPF host.
+    /// Loads MAUI assembly dynamically to avoid build-time namespace conflicts.
     /// </summary>
     public sealed class MauiBootstrapper
     {
@@ -23,7 +20,7 @@ namespace Xaml.Demo.Host.Wpf.Hosting
         private static MauiBootstrapper? _instance;
         public static MauiBootstrapper Instance => _instance ??= new MauiBootstrapper();
 
-        private MauiApp? _mauiApp;
+        private object? _mauiApp;
         private IServiceProvider? _services;
         private IntPtr _mainWindowHandle = IntPtr.Zero;
         private bool _initialized;
@@ -31,6 +28,14 @@ namespace Xaml.Demo.Host.Wpf.Hosting
         private bool _mauiReadyLogged;
         private bool _assemblyResolveHooked;
         private readonly Stopwatch _lifecycleSw = new();
+
+        // Reflected types and assemblies
+        private Assembly? _mauiAssembly;
+        private Assembly? _mauiControlsAssembly;
+        private Type? _mauiAppType;
+        private Type? _mauiProgramType;
+        private Type? _applicationBaseType;
+        private Type? _windowBaseType;
 
         private MauiBootstrapper() { }
 
@@ -48,33 +53,52 @@ namespace Xaml.Demo.Host.Wpf.Hosting
                 if (_initialized) return;
 
                 _lifecycleSw.Restart();
-                LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapperStart]: msg=InitializingDirect");
+                LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapperStart]: msg=InitializingReflection");
                 TryWindowsAppRuntimeBootstrap();
                 InstallAssemblyResolveHook();
                 InstallFirstChanceExceptionHook();
 
-                LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapping]: phase=CreateMauiApp directRef=true");
+                // Load MAUI assemblies via reflection
+                if (!LoadMauiAssemblies())
+                {
+                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapperError]: reason=FailedToLoadAssemblies");
+                    return;
+                }
+
+                LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapping]: phase=CreateMauiApp reflection=true");
                 try
                 {
-                    _mauiApp = MauiProgram.CreateMauiApp();
+                    // Invoke MauiProgram.CreateMauiApp() via reflection
+                    var createMethod = _mauiProgramType?.GetMethod("CreateMauiApp", BindingFlags.Public | BindingFlags.Static);
+                    if (createMethod == null)
+                    {
+                        LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapperError]: reason=CreateMauiAppMethodNotFound");
+                        return;
+                    }
+
+                    _mauiApp = createMethod.Invoke(null, null);
+                    if (_mauiApp == null)
+                    {
+                        LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapperError]: reason=CreateMauiAppReturnedNull");
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiCreateDirectError]: type=" + ex.GetType().FullName + " msg=" + ex.Message);
-                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiCreateDirectStack]: " + ex);
+                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiCreateReflectionError]: type=" + ex.GetType().FullName + " msg=" + ex.Message);
+                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiCreateReflectionStack]: " + ex);
                     if (ex.InnerException != null)
-                        LogRouter.Sink?.Write("HOST[Lifecycle:MauiCreateDirectInner]: inner=" + ex.InnerException.GetType().FullName + " msg=" + ex.InnerException.Message + " stack=" + ex.InnerException.StackTrace);
+                        LogRouter.Sink?.Write("HOST[Lifecycle:MauiCreateReflectionInner]: inner=" + ex.InnerException.GetType().FullName + " msg=" + ex.InnerException.Message + " stack=" + ex.InnerException.StackTrace);
                     return;
                 }
 
-                if (_mauiApp == null)
+                // Get services via reflection
+                var servicesProperty = _mauiAppType?.GetProperty("Services", BindingFlags.Public | BindingFlags.Instance);
+                if (servicesProperty != null)
                 {
-                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapperError]: reason=CreateMauiAppNull(direct)");
-                    return;
+                    _services = servicesProperty.GetValue(_mauiApp) as IServiceProvider;
                 }
 
-                // Get services directly
-                _services = _mauiApp.Services;
                 if (_services == null)
                 {
                     LogRouter.Sink?.Write("HOST[Lifecycle:MauiBootstrapperWarn]: msg=ServicesPropertyMissing");
@@ -96,6 +120,63 @@ namespace Xaml.Demo.Host.Wpf.Hosting
             finally
             {
                 _initGate.Release();
+            }
+        }
+
+        private bool LoadMauiAssemblies()
+        {
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string mauiAssemblyPath = Path.Combine(baseDir, "Xaml Demo.dll");
+
+                if (!File.Exists(mauiAssemblyPath))
+                {
+                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiAssemblyNotFound]: path=" + mauiAssemblyPath);
+                    return false;
+                }
+
+                _mauiAssembly = Assembly.LoadFrom(mauiAssemblyPath);
+                LogRouter.Sink?.Write("HOST[Lifecycle:MauiAssemblyLoaded]: name=" + _mauiAssembly.GetName().Name);
+
+                // Load Microsoft.Maui.Controls assembly
+                var mauiControlsPath = Path.Combine(baseDir, "Microsoft.Maui.Controls.dll");
+                if (File.Exists(mauiControlsPath))
+                {
+                    _mauiControlsAssembly = Assembly.LoadFrom(mauiControlsPath);
+                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiControlsAssemblyLoaded]: name=" + _mauiControlsAssembly.GetName().Name);
+                }
+
+                // Get required types via reflection
+                _mauiProgramType = _mauiAssembly.GetType("Xaml_Demo.MauiProgram");
+                if (_mauiProgramType == null)
+                {
+                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiTypeNotFound]: type=MauiProgram");
+                    return false;
+                }
+
+                // Get MauiApp type from Microsoft.Maui
+                var mauiCoreAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(a => a.GetName().Name == "Microsoft.Maui");
+                if (mauiCoreAssembly != null)
+                {
+                    _mauiAppType = mauiCoreAssembly.GetType("Microsoft.Maui.Hosting.MauiApp");
+                }
+
+                // Get Application and Window types from Microsoft.Maui.Controls
+                if (_mauiControlsAssembly != null)
+                {
+                    _applicationBaseType = _mauiControlsAssembly.GetType("Microsoft.Maui.Controls.Application");
+                    _windowBaseType = _mauiControlsAssembly.GetType("Microsoft.Maui.Controls.Window");
+                }
+
+                LogRouter.Sink?.Write($"HOST[Lifecycle:MauiTypesResolved]: MauiApp={_mauiAppType != null} Application={_applicationBaseType != null} Window={_windowBaseType != null}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogRouter.Sink?.Write("HOST[Lifecycle:MauiAssemblyLoadError]: " + ex.Message);
+                return false;
             }
         }
 
@@ -144,21 +225,47 @@ namespace Xaml.Demo.Host.Wpf.Hosting
 #if WINDOWS
             try
             {
-                if (_mainWindowHandle != IntPtr.Zero || _services == null) return;
+                if (_mainWindowHandle != IntPtr.Zero || _services == null || _applicationBaseType == null) return;
 
-                var app = _services.GetService<Application>();
+                // Get Application instance from services via reflection
+                var getServiceMethod = typeof(Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions)
+                    .GetMethod("GetService", new[] { typeof(IServiceProvider), typeof(Type) });
+                if (getServiceMethod == null) return;
+
+                var app = getServiceMethod.Invoke(null, new object[] { _services, _applicationBaseType });
                 if (app == null) return;
 
-                var firstWin = app.Windows.FirstOrDefault();
+                // Get Windows collection via reflection
+                var windowsProperty = _applicationBaseType.GetProperty("Windows", BindingFlags.Public | BindingFlags.Instance);
+                if (windowsProperty == null) return;
+
+                var windows = windowsProperty.GetValue(app);
+                if (windows == null) return;
+
+                // Get first window
+                var firstMethod = typeof(Enumerable).GetMethod("FirstOrDefault", new[] { typeof(System.Collections.Generic.IEnumerable<>) });
+                if (firstMethod == null) return;
+
+                var genericFirstMethod = firstMethod.MakeGenericMethod(_windowBaseType!);
+                var firstWin = genericFirstMethod.Invoke(null, new[] { windows });
                 if (firstWin == null) return;
 
-                var handler = firstWin.Handler;
+                // Get Handler property
+                var handlerProperty = _windowBaseType?.GetProperty("Handler", BindingFlags.Public | BindingFlags.Instance);
+                if (handlerProperty == null) return;
+
+                var handler = handlerProperty.GetValue(firstWin);
                 if (handler == null) return;
 
-                var platformView = handler.PlatformView;
+                // Get PlatformView property
+                var platformViewProperty = handler.GetType().GetProperty("PlatformView", BindingFlags.Public | BindingFlags.Instance);
+                if (platformViewProperty == null) return;
+
+                var platformView = platformViewProperty.GetValue(handler);
                 if (platformView == null) return;
 
-                if (platformView is Microsoft.UI.Xaml.Window winUIWindow)
+                // Check if it's a Microsoft.UI.Xaml.Window
+                if (platformView.GetType().FullName == "Microsoft.UI.Xaml.Window")
                 {
                     var windowNativeType = AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(a =>
@@ -169,7 +276,7 @@ namespace Xaml.Demo.Host.Wpf.Hosting
                     var getHandle = windowNativeType?.GetMethod("GetWindowHandle", BindingFlags.Public | BindingFlags.Static);
                     if (getHandle != null)
                     {
-                        var hwndObj = getHandle.Invoke(null, new[] { winUIWindow });
+                        var hwndObj = getHandle.Invoke(null, new[] { platformView });
                         if (hwndObj is IntPtr hwnd && hwnd != IntPtr.Zero)
                         {
                             _mainWindowHandle = hwnd;
@@ -190,15 +297,33 @@ namespace Xaml.Demo.Host.Wpf.Hosting
         /// </summary>
         private void ForceCreateWindow()
         {
-            if (_forcedWindowAttempted || _services == null) return;
+            if (_forcedWindowAttempted || _services == null || _applicationBaseType == null) return;
             _forcedWindowAttempted = true;
 
             try
             {
-                var app = _services.GetService<Application>();
+                // Get Application instance via reflection
+                var getServiceMethod = typeof(Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions)
+                    .GetMethod("GetService", new[] { typeof(IServiceProvider), typeof(Type) });
+                if (getServiceMethod == null) return;
+
+                var app = getServiceMethod.Invoke(null, new object[] { _services, _applicationBaseType });
                 if (app == null) return;
 
-                bool hasWindow = app.Windows.Any();
+                // Check if Windows collection has any items
+                var windowsProperty = _applicationBaseType.GetProperty("Windows", BindingFlags.Public | BindingFlags.Instance);
+                if (windowsProperty == null) return;
+
+                var windows = windowsProperty.GetValue(app);
+                if (windows == null) return;
+
+                var anyMethod = typeof(Enumerable).GetMethods()
+                    .FirstOrDefault(m => m.Name == "Any" && m.GetParameters().Length == 1);
+                if (anyMethod == null) return;
+
+                var genericAnyMethod = anyMethod.MakeGenericMethod(_windowBaseType!);
+                var hasWindow = (bool)genericAnyMethod.Invoke(null, new[] { windows })!;
+
                 if (hasWindow)
                 {
                     LogRouter.Sink?.Write("HOST[Lifecycle:MauiForceWindowSkip]: reason=ExistingWindow");
@@ -206,10 +331,24 @@ namespace Xaml.Demo.Host.Wpf.Hosting
                 }
 
                 // Try assigning a temporary MainPage to trigger window creation
-                if (app.MainPage == null)
+                var mainPageProperty = _applicationBaseType.GetProperty("MainPage", BindingFlags.Public | BindingFlags.Instance);
+                if (mainPageProperty != null)
                 {
-                    app.MainPage = new ContentPage { Title = "MAUI Host" };
-                    LogRouter.Sink?.Write("HOST[Lifecycle:MauiForceWindowAttempt]: action=SetTempMainPage");
+                    var currentMainPage = mainPageProperty.GetValue(app);
+                    if (currentMainPage == null)
+                    {
+                        // Create a ContentPage via reflection
+                        var contentPageType = _mauiControlsAssembly?.GetType("Microsoft.Maui.Controls.ContentPage");
+                        if (contentPageType != null)
+                        {
+                            var contentPage = Activator.CreateInstance(contentPageType);
+                            var titleProperty = contentPageType.GetProperty("Title", BindingFlags.Public | BindingFlags.Instance);
+                            titleProperty?.SetValue(contentPage, "MAUI Host");
+                            
+                            mainPageProperty.SetValue(app, contentPage);
+                            LogRouter.Sink?.Write("HOST[Lifecycle:MauiForceWindowAttempt]: action=SetTempMainPage");
+                        }
+                    }
                 }
 
                 // Re-attempt acquisition after forced creation path

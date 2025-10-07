@@ -38,7 +38,10 @@
     <TargetPlatformVersion>10.0.19041.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
+    <PackageCertificateKeyFile>XamlDemoTestCert.pfx</PackageCertificateKeyFile>
+    <PackageCertificatePassword>XamlDemo123!</PackageCertificatePassword>
+    <PackageCertificateThumbprint>98FADC0E823D523EEDCE0D499251B2C5D2977663</PackageCertificateThumbprint>
     <NoWarn>$(NoWarn);NU1702</NoWarn>
     <EntryPointProjectUniqueName>..\Xaml.Demo.Host.Wpf\Xaml.Demo.Host.Wpf.csproj</EntryPointProjectUniqueName>
   </PropertyGroup>

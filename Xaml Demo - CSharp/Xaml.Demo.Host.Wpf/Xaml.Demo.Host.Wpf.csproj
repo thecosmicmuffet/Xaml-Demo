@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Xaml.Demo.Core\Xaml.Demo.Core.csproj" />
-    <ProjectReference Include="..\Xaml Demo\Xaml Demo.csproj" />
+    <!-- Direct MAUI reference removed - using reflection-based loading instead -->
   </ItemGroup>
 
   <Target Name="CopyMauiAssembly" AfterTargets="Build">
@@ -33,6 +33,7 @@
     <AssemblyName>Xaml.Demo.Host.Wpf</AssemblyName>
     <RootNamespace>Xaml.Demo.Host.Wpf</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
     <EnableMsixTooling>false</EnableMsixTooling>
     <!-- Removed DIRECT_MAUI_REF constant after reverting direct MAUI reference -->
@@ -108,6 +109,8 @@
                       PrivateAssets="none" />
     <!-- Keep Win2D fully excluded for now (not required for bootstrap) -->
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" ExcludeAssets="all" PrivateAssets="all" />
+    <!-- Required for reflection-based service resolution in MauiBootstrapper -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
   </ItemGroup>
 
   <!-- Guard to neutralize any lingering WinAppSDK targets if still imported -->
