@@ -24,6 +24,23 @@
     <Message Text="Copied MAUI host + dependencies to WPF output (count=@(_MauiDeps->Count()))." Importance="Low" />
   </Target>
 
+  <!-- Mark MAUI assemblies as Content so they are included in package -->
+  <Target Name="IncludeMauiInPackage" BeforeTargets="GetPackagingOutputs" DependsOnTargets="CopyMauiAssembly">
+    <PropertyGroup>
+      <_MauiWinDir>..\Xaml Demo\bin\$(Configuration)\net10.0-windows10.0.19041.0\win-x64</_MauiWinDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- Include all MAUI assemblies from output directory as package content -->
+      <_PackageMauiFiles Include="$(OutDir)Xaml Demo.dll" Condition="Exists('$(OutDir)Xaml Demo.dll')" />
+      <_PackageMauiFiles Include="$(OutDir)Microsoft.Maui*.dll" />
+      <_PackageMauiFiles Include="$(OutDir)Microsoft.Extensions*.dll" />
+      <_PackageMauiFiles Include="$(OutDir)System.Reactive*.dll" />
+      <!-- Mark as Content with CopyToOutputDirectory to ensure packaging includes them -->
+      <Content Include="@(_PackageMauiFiles)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    </ItemGroup>
+    <Message Text="Marked @(_PackageMauiFiles->Count()) MAUI files for package inclusion." Importance="high" />
+  </Target>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
@@ -33,7 +50,7 @@
     <AssemblyName>Xaml.Demo.Host.Wpf</AssemblyName>
     <RootNamespace>Xaml.Demo.Host.Wpf</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
     <EnableMsixTooling>false</EnableMsixTooling>
     <!-- Removed DIRECT_MAUI_REF constant after reverting direct MAUI reference -->

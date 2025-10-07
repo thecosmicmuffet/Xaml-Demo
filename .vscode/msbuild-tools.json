@@ -1,0 +1,39 @@
+{
+    "solution": "${workspaceRoot}/Xaml Demo - CSharp/Xaml Demo.sln",
+    "variables": {
+        "MSBUILD": "C:/Program Files/Microsoft Visual Studio/2022/Preview/MSBuild/Current/Bin/MSBuild.exe",
+        "DEVENV": "C:/Program Files/Microsoft Visual Studio/2022/Preview/Common7/IDE/devenv.com"
+    },
+    "buildConfigurations": [
+        "Debug",
+        "Release"
+    ],
+    "platformConfigurations": [
+        "x64",
+        "x86"
+    ],
+    "preBuildTasks": [
+        {
+            "name": "Build start message",
+            "program": "cmd",
+            "args": [ "/c", "echo [pre-build task]: Build start" ],
+            "cwd": "${workspaceRoot}"
+        }
+    ],
+    "postBuildTasks": [
+        {
+            "name": "Complete message",
+            "program": "cmd",
+            "args": [ "/c", "echo [post-build task]: Build complete" ],
+            "cwd": "${workspaceRoot}"
+        }
+    ],
+    "debugConfigurations": [
+        {
+            "name": "test",
+            "cwd": "${workspaceRoot}",
+            "program": "${workspaceRoot}Xaml Demo - CSharp/Xaml.Demo.Host.Wpf/bin/x64/${buildConfig}/net10.0-windows10.0.19041.0/win-x64/Xaml Demo.exe",
+            "args": []
+        }
+    ]
+}
