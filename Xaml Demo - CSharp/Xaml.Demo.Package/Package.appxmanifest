@@ -7,12 +7,12 @@
   IgnorableNamespaces="uap mp rescap">
 
   <Identity
-    Name="XamlDemo.WpfHost"
+    Name="XamlDemo.MauiOrchestrator"
     Publisher="CN=XamlDemoPublisher"
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>Xaml Demo WPF Host</DisplayName>
+    <DisplayName>Xaml Demo - MAUI Orchestrator</DisplayName>
     <PublisherDisplayName>Xaml Demo Team</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -23,19 +23,21 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="en-US"/>
   </Resources>
 
   <Applications>
     <Application Id="App"
-      Executable="$targetnametoken$.exe"
-      EntryPoint="$targetentrypoint$">
+      Executable="Xaml Demo.exe"
+      EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Xaml Demo WPF Host"
-        Description="WPF host for MAUI and WinUI surfaces"
+        DisplayName="Xaml Demo - MAUI Orchestrator"
+        Description="MAUI orchestrator for multiple rendering surfaces"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
         Square44x44Logo="Images\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.scale-200.png"  />
+        <uap:SplashScreen Image="Images\SplashScreen.scale-200.png" />
       </uap:VisualElements>
     </Application>
   </Applications>

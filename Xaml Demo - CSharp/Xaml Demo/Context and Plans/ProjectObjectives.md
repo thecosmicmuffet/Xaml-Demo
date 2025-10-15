@@ -1,8 +1,65 @@
-# Goals
+# Project Mission
 
-## Demonstrate the utility of the XAML layer of abstraction as a way to orchestrate components in a single view with different dependencies and rendering pipelines. 
+## MAUI as the Orchestration Layer
 
-As a proof of concept, determine how to overcome a known limitation of WinUI3 that it cannot host Xaml Windows from other processes. In order to step outside the limitations of winui 3, the Windows Platform implementation in this project needs to be organized as a WPF project which can host WinUI3 Xaml Windows, UWP Xaml Windows, and any other kind of arbitrary control. For the first stage, it needs to host the current Win UI 3 CollectionView, and a UWP CollectionView in the MultiVisualPerfView. This should require changing the implementation of the ContentView to something capable of hosting multiple subwindows, or hosting control logic in a SwapChainPanel. It might involve making a WPF for the Windows Platform deployment.
+**Core Principle**: MAUI provides the stable XAML specification layer that orchestrates multiple rendering surfaces, each potentially using different UI frameworks (WinUI3, UWP, WPF) or running in separate processes.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ MAUI Application (Orchestration Layer)                      │
+│ - Provides stable XAML structure                            │
+│ - Coordinates via IRenderSurface abstraction                │
+│ - Manages lifecycle and communication                       │
+└─────────────────────────────────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│ In-Process   │   │ In-Process   │   │ Out-of-      │
+│ Surface      │   │ Surface      │   │ Process      │
+│ (MAUI)       │   │ (WinUI3)     │   │ Surface      │
+│              │   │              │   │ (External    │
+│              │   │              │   │  MAUI App)   │
+└──────────────┘   └──────────────┘   └──────────────┘
+                                                │
+                                                ▼
+                                       ┌──────────────┐
+                                       │ IPC Channel  │
+                                       │ (Named Pipes)│
+                                       └──────────────┘
+```
+
+## Primary Goals
+
+### 1. Demonstrate XAML Abstraction Utility
+
+Prove that XAML can orchestrate components with:
+- Different UI framework dependencies (MAUI, WinUI3, UWP, WPF)
+- Different rendering pipelines (in-process vs. out-of-process)
+- Different activation contexts (packaged vs. unpackaged)
+- Unified data binding and command infrastructure
+
+**Key Abstraction**: The `IRenderSurface` interface provides framework-agnostic surface integration, allowing MAUI to coordinate surfaces regardless of their underlying implementation.
+
+### 2. Overcome Cross-Framework Limitations
+
+**Challenge**: WinUI3 and modern Windows UI frameworks require specific activation contexts (package identity, COM registration) that create barriers to traditional in-process hosting.
+
+**Solution Approach**:
+- **In-Process Surfaces**: For compatible frameworks (MAUI CollectionView, WinUI3 ListView with custom handlers)
+- **Out-of-Process Surfaces**: For isolated activation contexts via IPC communication
+- **Process Boundary Management**: Using named pipes for state synchronization and command routing
+
+### 3. Educational Demonstration
+
+Create a working example that teaches:
+- Where framework abstraction works seamlessly
+- Where architectural boundaries require process isolation
+- How to design surface abstractions that work across both scenarios
+- Performance trade-offs between different rendering approaches
 
 ## Teach XAML abstraction techniques with diverse UI Approaches 
 

@@ -1,10 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Xaml.Demo.Core\Xaml.Demo.Core.csproj" />
     <!-- Direct MAUI reference removed - using reflection-based loading instead -->
   </ItemGroup>
-
   <Target Name="CopyMauiAssembly" AfterTargets="Build">
     <PropertyGroup>
       <!-- Revert: MAUI project back on net10.0 preview -->
@@ -21,9 +20,8 @@
     </ItemGroup>
     <Copy SourceFiles="@(_MauiAssembly)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_MauiAssembly)' != ''" />
     <Copy SourceFiles="@(_MauiDeps)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_MauiDeps)' != ''" />
-    <Message Text="Copied MAUI host + dependencies to WPF output (count=@(_MauiDeps->Count()))." Importance="Low" />
+    <Message Text="Copied MAUI host + dependencies to WPF output (count=@(_MauiDeps-&gt;Count()))." Importance="Low" />
   </Target>
-
   <!-- Mark MAUI assemblies as Content so they are included in package -->
   <Target Name="IncludeMauiInPackage" BeforeTargets="GetPackagingOutputs" DependsOnTargets="CopyMauiAssembly">
     <PropertyGroup>
@@ -38,9 +36,8 @@
       <!-- Mark as Content with CopyToOutputDirectory to ensure packaging includes them -->
       <Content Include="@(_PackageMauiFiles)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     </ItemGroup>
-    <Message Text="Marked @(_PackageMauiFiles->Count()) MAUI files for package inclusion." Importance="high" />
+    <Message Text="Marked @(_PackageMauiFiles-&gt;Count()) MAUI files for package inclusion." Importance="high" />
   </Target>
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
@@ -54,8 +51,10 @@
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
     <EnableMsixTooling>false</EnableMsixTooling>
     <!-- Removed DIRECT_MAUI_REF constant after reverting direct MAUI reference -->
+    <!-- Suppress all warnings -->
+    <NoWarn>$(NoWarn);CS0618;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625;CS8765;NU1608;NETSDK1206;MSB3277;MSB3026;NETSDK1057;NETSDK1047</NoWarn>
+    <WarningLevel>0</WarningLevel>
   </PropertyGroup>
-
   <!-- Hard block WinAppSDK PRI / packaging task loading (prevents ExpandPriContent MSB4062) -->
   <PropertyGroup>
     <EnableMrtCorePriGeneration>false</EnableMrtCorePriGeneration>
@@ -68,17 +67,13 @@
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <DisableWinAppSdkTargets>true</DisableWinAppSdkTargets>
   </PropertyGroup>
-
   <!-- Early no-op to shadow any imported ExpandPriContent before WinAppSDK targets load -->
   <Target Name="ExpandPriContent" BeforeTargets="PrepareForBuild">
     <Message Text="(Early) ExpandPriContent suppressed." Importance="Low" />
   </Target>
-
   <!-- Removed Windows SDK BuildTools to avoid transitive PRI / MrtCore tasks (ExpandPriContent failure under preview SDK).
        Re-introduce later only if specific winmd generation or headers are required. -->
-  <ItemGroup>
-  </ItemGroup>
-
+  <ItemGroup></ItemGroup>
   <!-- Suppress Windows App SDK PRI generation / Win2D AnyCPU warning for this pure WPF host.
        Step 5 allows deferring AppX / PRI; we override related properties & target. -->
   <PropertyGroup>
@@ -87,7 +82,6 @@
     <SkipWinAppSdkPriGeneration>true</SkipWinAppSdkPriGeneration>
     <Win2DWarnNoPlatform>true</Win2DWarnNoPlatform>
   </PropertyGroup>
-
   <!-- Additional suppression of PRI / AppX related processing -->
   <PropertyGroup>
     <EnablePriGeneration>false</EnablePriGeneration>
@@ -96,13 +90,11 @@
     <DisableAppxProjectPriGeneration>true</DisableAppxProjectPriGeneration>
     <EnableMonacoPriGeneration>false</EnableMonacoPriGeneration>
   </PropertyGroup>
-
   <!-- No-op override for ExpandPriContent (avoid WindowsAppSDK PRI task load);
        Removed CodeTaskFactory stub (not supported on .NET Core MSBuild). -->
   <Target Name="ExpandPriContent">
     <Message Text="ExpandPriContent no-op: PRI generation disabled for WPF host scaffold." Importance="Low" />
   </Target>
-
   <!-- Hard disable any Windows App SDK target imports that may still flow transitively (defensive). -->
   <PropertyGroup>
     <EnableWindowsAppSdk>false</EnableWindowsAppSdk>
@@ -115,21 +107,17 @@
     <UseWinUI>false</UseWinUI>
     <EnableWindowsAppSdkDeployment>false</EnableWindowsAppSdkDeployment>
   </PropertyGroup>
-
   <!-- Strip build / buildTransitive assets (targets & props) from transitive packages if present -->
   <ItemGroup>
     <!-- Re-introduce Windows App SDK runtime assemblies ONLY (exclude build / pri / analyzers to avoid ExpandPriContent).
          This provides Microsoft.WindowsAppSDK + Microsoft.UI.Xaml runtime bits needed for MAUI module initialization. -->
     <!-- Revert: full WindowsAppSDK asset enable caused long restore + 'Cannot create a file' error at NuGet.targets(197,5). Limit to runtime assemblies only again. -->
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001"
-                      ExcludeAssets="build;buildTransitive;contentFiles;analyzers"
-                      PrivateAssets="none" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" ExcludeAssets="build;buildTransitive;contentFiles;analyzers" PrivateAssets="none" />
     <!-- Keep Win2D fully excluded for now (not required for bootstrap) -->
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" ExcludeAssets="all" PrivateAssets="all" />
     <!-- Required for reflection-based service resolution in MauiBootstrapper -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
   </ItemGroup>
-
   <!-- Guard to neutralize any lingering WinAppSDK targets if still imported -->
   <Target Name="_NeutralizeWinAppSdkTargets" BeforeTargets="PrepareResources">
     <PropertyGroup>
@@ -137,12 +125,10 @@
     </PropertyGroup>
     <Message Text="WinAppSDK build assets excluded (enforced)." Importance="Low" />
   </Target>
-
   <!-- Guard: redefine ExpandPriContent after all imports to ensure it stays a no-op -->
   <Target Name="ExpandPriContent" AfterTargets="ResolveAssemblyReferences">
     <Message Text="(Late) ExpandPriContent suppressed (post-import override)." Importance="Low" />
   </Target>
-
   <!-- Copy Windows App Runtime files from MAUI project's output (they should have them) -->
   <Target Name="CopyWinAppRuntimeFromMaui" AfterTargets="Build">
     <PropertyGroup>
@@ -157,16 +143,11 @@
       <_WinAppRuntimeFiles Include="$(_MauiWinDir)\Microsoft.UI.Xaml.Phone.dll" Condition="Exists('$(_MauiWinDir)\Microsoft.UI.Xaml.Phone.dll')" />
       <_WinAppRuntimeFiles Include="$(_MauiWinDir)\resources.pri" Condition="Exists('$(_MauiWinDir)\resources.pri')" />
     </ItemGroup>
-    <Copy SourceFiles="@(_WinAppRuntimeFiles)"
-          DestinationFolder="$(OutDir)"
-          SkipUnchangedFiles="true"
-          Condition="'@(_WinAppRuntimeFiles)' != ''" />
-    <Message Text="Copied Windows App Runtime files from MAUI: @(_WinAppRuntimeFiles->'%(Filename)%(Extension)', ', ')." Importance="high" />
-    
+    <Copy SourceFiles="@(_WinAppRuntimeFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_WinAppRuntimeFiles)' != ''" />
+    <Message Text="Copied Windows App Runtime files from MAUI: @(_WinAppRuntimeFiles-&gt;'%(Filename)%(Extension)', ', ')." Importance="high" />
     <!-- Also check if we need to initialize the Windows App Runtime -->
     <Message Text="Windows App Runtime files in output: " Importance="high" />
     <Message Text="  Microsoft.WindowsAppRuntime.dll: $([System.IO.File]::Exists('$(OutDir)Microsoft.WindowsAppRuntime.dll'))" Importance="high" />
     <Message Text="  Microsoft.UI.Xaml.dll: $([System.IO.File]::Exists('$(OutDir)Microsoft.UI.Xaml.dll'))" Importance="high" />
   </Target>
-
 </Project>
